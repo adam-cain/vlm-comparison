@@ -298,13 +298,18 @@
           <label for="modelSelect">Model:</label>
           <select id="modelSelect" name="Model">
             <option value="smolvlm-256m">SmolVLM 256M (Fast)</option>
-            <option value="florence2-base">Florence-2 Base (Microsoft)</option>
+            <option value="florence2-base-pretrain">Florence-2 Base PT (Microsoft)</option>
+            <option value="florence2-base">Florence-2 Base FT (Microsoft)</option>
             <option value="fastvlm-05b">FastVLM 0.5B (Apple)</option>
             <option value="smolvlm-500m" selected>SmolVLM 500M (Balanced)</option>
+            <option value="janus-pro-1b">Janus-Pro 1B (DeepSeek)</option>
             <option value="florence2-large">Florence-2 Large (Microsoft)</option>
+            <option value="moondream2">Moondream2 (Xenova)</option>
+            <option value="janus-1.3b">Janus 1.3B (DeepSeek)</option>
             <option value="smolvlm-2b">SmolVLM 2B (Capable)</option>
             <option value="qwen2vl-2b">Qwen2-VL 2B (Alibaba)</option>
             <option value="paligemma2-3b">PaliGemma2 3B (Google)</option>
+            <option value="phi3-vision">Phi-3 Vision (Microsoft)</option>
           </select>
           <span id="memoryWarning" class="hidden">&#9888; High VRAM (~4GB)</span>
           <label for="instructionText">Instruction:</label>
@@ -340,11 +345,14 @@
     <script type="module">
       import {
         AutoProcessor,
+        AutoTokenizer,
         AutoModelForVision2Seq,
         AutoModelForImageTextToText,
         Qwen2VLForConditionalGeneration,
         Florence2ForConditionalGeneration,
         PaliGemmaForConditionalGeneration,
+        Moondream1ForConditionalGeneration,
+        MultiModalityCausalLM,
         RawImage,
       } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers/dist/transformers.min.js";
 
@@ -482,6 +490,88 @@
           chatTemplateSupported: false,
           imageSize: 224,
         },
+        "moondream2": {
+          modelId: "Xenova/moondream2",
+          displayName: "Moondream2 (Xenova)",
+          modelClass: "Moondream1ForConditionalGeneration",
+          processorType: "moondream",
+          vramEstimate: "~2GB",
+          maxTokens: 128,
+          suggestedInterval: "250",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "fp16",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+          requiresTokenizer: true,
+        },
+        "janus-pro-1b": {
+          modelId: "onnx-community/Janus-Pro-1B-ONNX",
+          displayName: "Janus-Pro 1B (DeepSeek)",
+          modelClass: "MultiModalityCausalLM",
+          processorType: "janus",
+          vramEstimate: "~2GB",
+          maxTokens: 150,
+          suggestedInterval: "250",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+        },
+        "janus-1.3b": {
+          modelId: "onnx-community/Janus-1.3B-ONNX",
+          displayName: "Janus 1.3B (DeepSeek)",
+          modelClass: "MultiModalityCausalLM",
+          processorType: "janus",
+          vramEstimate: "~2.5GB",
+          maxTokens: 150,
+          suggestedInterval: "500",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+        },
+        "florence2-base-pretrain": {
+          modelId: "onnx-community/Florence-2-base",
+          displayName: "Florence-2 Base PT (Microsoft)",
+          modelClass: "Florence2ForConditionalGeneration",
+          processorType: "florence",
+          vramEstimate: "~0.5GB",
+          maxTokens: 150,
+          suggestedInterval: "100",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+          defaultPrompt: "<MORE_DETAILED_CAPTION>",
+        },
+        "phi3-vision": {
+          modelId: "onnx-community/Phi-3-vision-128k-instruct",
+          displayName: "Phi-3 Vision (Microsoft)",
+          modelClass: "AutoModelForImageTextToText",
+          processorType: "phi3v",
+          vramEstimate: "~8GB",
+          maxTokens: 200,
+          suggestedInterval: "1000",
+          showWarning: true,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: true,
+        },
       };
 
       const video = document.getElementById("videoFeed");
@@ -547,7 +637,7 @@
       let stream;
       let isProcessing = false;
 
-      let processor, model;
+      let processor, model, tokenizer;
 
       // Helper function to get model configuration
       function getModelConfig(modelKey) {
@@ -577,6 +667,7 @@
       function disposeCurrentModel() {
         processor = null;
         model = null;
+        tokenizer = null;
         currentModelKey = null;
         // Hint garbage collection (not guaranteed but helps)
         if (typeof gc === "function") {
@@ -603,6 +694,15 @@
           loadingStatus.textContent = "Processor loaded. Loading model...";
           responseText.value = `${config.displayName}: Processor loaded. Loading model...`;
 
+          // Load tokenizer if required (e.g., Moondream)
+          if (config.requiresTokenizer) {
+            loadingStatus.textContent = "Loading tokenizer...";
+            tokenizer = await AutoTokenizer.from_pretrained(config.modelId);
+            loadingStatus.textContent = "Tokenizer loaded. Loading model...";
+          } else {
+            tokenizer = null;
+          }
+
           // Load model based on model class
           if (config.modelClass === "AutoModelForImageTextToText") {
             model = await AutoModelForImageTextToText.from_pretrained(config.modelId, {
@@ -621,6 +721,16 @@
             });
           } else if (config.modelClass === "PaliGemmaForConditionalGeneration") {
             model = await PaliGemmaForConditionalGeneration.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          } else if (config.modelClass === "Moondream1ForConditionalGeneration") {
+            model = await Moondream1ForConditionalGeneration.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          } else if (config.modelClass === "MultiModalityCausalLM") {
+            model = await MultiModalityCausalLM.from_pretrained(config.modelId, {
               dtype: config.dtype,
               device: "webgpu",
             });
@@ -773,6 +883,34 @@
           // PaliGemma: space-prefixed text prompt, no chat template
           const prompt = " " + instruction;
           inputs = await processor(processedImage, prompt);
+        } else if (processorType === "moondream") {
+          // Moondream: uses separate tokenizer, special prompt format
+          const prompt = `<<image>>\n\nQuestion: ${instruction}\n\nAnswer:`;
+          const text_inputs = tokenizer(prompt);
+          const vision_inputs = await processor(processedImage);
+          inputs = { ...text_inputs, ...vision_inputs };
+        } else if (processorType === "janus") {
+          // Janus: uses special role format with image placeholder
+          const conversation = [
+            {
+              role: "<|User|>",
+              content: `<<image_placeholder>>\n${instruction}`,
+              images: [processedImage],
+            },
+          ];
+          inputs = await processor(conversation);
+        } else if (processorType === "phi3v") {
+          // Phi-3 Vision: uses chat template with image placeholder
+          messages = [
+            {
+              role: "user",
+              content: [{ type: "image" }, { type: "text", text: instruction }],
+            },
+          ];
+          text = processor.apply_chat_template(messages, {
+            add_generation_prompt: true,
+          });
+          inputs = await processor(text, processedImage);
         } else {
           // SmolVLM: structured content array, text-first processor call
           messages = [
