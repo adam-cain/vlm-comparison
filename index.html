@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VLM Comparison</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: #0d0d0d;
+        color: #e0e0e0;
+      }
+      .app-container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        width: 100%;
+        background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
+      }
+      .top-pane {
+        flex: 1 1 50%;
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #0a0a0a;
+        overflow: hidden;
+        border-bottom: 1px solid #2a2a2a;
+      }
+      #videoContainer {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at center, #141414 0%, #0a0a0a 100%);
+      }
+      #videoFeed {
+        display: block;
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 4px;
+      }
+      #loadingOverlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.85);
+        z-index: 10;
+        color: #60a5fa;
+        font-size: 1.2em;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+      }
+      .resizer {
+        height: 6px;
+        background-color: #1e1e1e;
+        cursor: ns-resize;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease;
+        border-top: 1px solid #2a2a2a;
+        border-bottom: 1px solid #2a2a2a;
+      }
+      .resizer:hover,
+      .resizer.resizing {
+        background-color: #2d2d2d;
+      }
+      .resizer::after {
+        content: '';
+        width: 48px;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #444, transparent);
+        border-radius: 2px;
+      }
+      .resizer:hover::after,
+      .resizer.resizing::after {
+        background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+      }
+      .bottom-pane {
+        flex: 1 1 50%;
+        min-height: 150px;
+        display: flex;
+        flex-direction: column;
+        background-color: #111111;
+        overflow: hidden;
+      }
+      .instruction-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background-color: #161616;
+        border-bottom: 1px solid #2a2a2a;
+        flex-shrink: 0;
+      }
+      .instruction-row label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+      }
+      #instructionText {
+        flex: 1;
+        padding: 10px 14px;
+        background-color: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #e0e0e0;
+        min-width: 0;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      #instructionText:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      }
+      #instructionText::placeholder {
+        color: #555;
+      }
+      #intervalSelect,
+      #modelSelect {
+        padding: 10px 12px;
+        background-color: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        color: #e0e0e0;
+        font-size: 13px;
+        cursor: pointer;
+        transition: border-color 0.2s ease;
+      }
+      #modelSelect {
+        min-width: 180px;
+      }
+      #intervalSelect:hover,
+      #modelSelect:hover {
+        border-color: #3a3a3a;
+      }
+      #intervalSelect:focus,
+      #modelSelect:focus {
+        outline: none;
+        border-color: #3b82f6;
+      }
+      #memoryWarning {
+        color: #f59e0b;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background-color: rgba(245, 158, 11, 0.1);
+        border-radius: 4px;
+      }
+      #memoryWarning.hidden {
+        display: none;
+      }
+      .loading-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .loading-model-name {
+        font-weight: 600;
+        font-size: 1.3em;
+      }
+      .loading-status {
+        font-weight: 400;
+        font-size: 1em;
+        opacity: 0.8;
+      }
+      #startButton {
+        padding: 10px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+      }
+      #startButton.start {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+      }
+      #startButton.start:hover {
+        background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+        transform: translateY(-1px);
+      }
+      #startButton.stop {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+      }
+      #startButton.stop:hover {
+        background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+        transform: translateY(-1px);
+      }
+      .response-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 16px;
+        min-height: 0;
+      }
+      .response-section label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        flex-shrink: 0;
+      }
+      #responseText {
+        flex: 1;
+        width: 100%;
+        padding: 14px;
+        background-color: #0d0d0d;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        color: #c0c0c0;
+        resize: none;
+        min-height: 0;
+        line-height: 1.6;
+      }
+      #responseText:focus {
+        outline: none;
+        border-color: #3a3a3a;
+      }
+      #responseText::placeholder {
+        color: #444;
+      }
+      .hidden {
+        display: none;
+      }
+      /* Scrollbar styling */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1a1a1a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <div class="top-pane" id="topPane">
+        <div id="videoContainer">
+          <video id="videoFeed" autoplay playsinline></video>
+          <div id="loadingOverlay">
+            <div class="loading-content">
+              <span id="loadingModelName" class="loading-model-name"></span>
+              <span id="loadingStatus" class="loading-status">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <canvas id="canvas" class="hidden"></canvas>
+
+      <div class="resizer" id="resizer"></div>
+
+      <div class="bottom-pane" id="bottomPane">
+        <div class="instruction-row">
+          <label for="modelSelect">Model:</label>
+          <select id="modelSelect" name="Model">
+            <option value="smolvlm-256m">SmolVLM 256M (Fast)</option>
+            <option value="florence2-base">Florence-2 Base (Microsoft)</option>
+            <option value="fastvlm-05b">FastVLM 0.5B (Apple)</option>
+            <option value="smolvlm-500m" selected>SmolVLM 500M (Balanced)</option>
+            <option value="florence2-large">Florence-2 Large (Microsoft)</option>
+            <option value="smolvlm-2b">SmolVLM 2B (Capable)</option>
+            <option value="qwen2vl-2b">Qwen2-VL 2B (Alibaba)</option>
+            <option value="paligemma2-3b">PaliGemma2 3B (Google)</option>
+          </select>
+          <span id="memoryWarning" class="hidden">&#9888; High VRAM (~4GB)</span>
+          <label for="instructionText">Instruction:</label>
+          <input
+            type="text"
+            id="instructionText"
+            name="Instruction"
+            placeholder="Enter instruction..."
+          />
+          <label for="intervalSelect">Interval:</label>
+          <select id="intervalSelect" name="Interval">
+            <option value="0" selected>0ms</option>
+            <option value="100">100ms</option>
+            <option value="250">250ms</option>
+            <option value="500">500ms</option>
+            <option value="1000">1s</option>
+            <option value="2000">2s</option>
+          </select>
+          <button id="startButton" class="start">Start</button>
+        </div>
+        <div class="response-section">
+          <label for="responseText">Response:</label>
+          <textarea
+            id="responseText"
+            name="Response"
+            readonly
+            placeholder="Server response will appear here..."
+          ></textarea>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import {
+        AutoProcessor,
+        AutoModelForVision2Seq,
+        AutoModelForImageTextToText,
+        Qwen2VLForConditionalGeneration,
+        Florence2ForConditionalGeneration,
+        PaliGemmaForConditionalGeneration,
+        RawImage,
+      } from "https://cdn.jsdelivr.net/npm/@huggingface/transformers/dist/transformers.min.js";
+
+      // Model configurations for multi-model support
+      const MODEL_CONFIGS = {
+        "smolvlm-256m": {
+          modelId: "HuggingFaceTB/SmolVLM-256M-Instruct",
+          displayName: "SmolVLM 256M (Fast)",
+          modelClass: "AutoModelForVision2Seq",
+          processorType: "smolvlm",
+          vramEstimate: "~0.5GB",
+          maxTokens: 100,
+          suggestedInterval: "0",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: true,
+        },
+        "smolvlm-500m": {
+          modelId: "HuggingFaceTB/SmolVLM-500M-Instruct",
+          displayName: "SmolVLM 500M (Balanced)",
+          modelClass: "AutoModelForVision2Seq",
+          processorType: "smolvlm",
+          vramEstimate: "~1GB",
+          maxTokens: 100,
+          suggestedInterval: "100",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: true,
+        },
+        "smolvlm-2b": {
+          modelId: "HuggingFaceTB/SmolVLM-Instruct",
+          displayName: "SmolVLM 2B (Capable)",
+          modelClass: "AutoModelForVision2Seq",
+          processorType: "smolvlm",
+          vramEstimate: "~4GB",
+          maxTokens: 150,
+          suggestedInterval: "500",
+          showWarning: true,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: true,
+        },
+        "fastvlm-05b": {
+          modelId: "onnx-community/FastVLM-0.5B-ONNX",
+          displayName: "FastVLM 0.5B (Apple)",
+          modelClass: "AutoModelForImageTextToText",
+          processorType: "fastvlm",
+          vramEstimate: "~1GB",
+          maxTokens: 100,
+          suggestedInterval: "0",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: true,
+        },
+        "qwen2vl-2b": {
+          modelId: "onnx-community/Qwen2-VL-2B-Instruct",
+          displayName: "Qwen2-VL 2B (Alibaba)",
+          modelClass: "Qwen2VLForConditionalGeneration",
+          processorType: "qwen2vl",
+          vramEstimate: "~4GB",
+          maxTokens: 150,
+          suggestedInterval: "500",
+          showWarning: true,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: true,
+          imageSize: 448,
+        },
+        "florence2-base": {
+          modelId: "onnx-community/Florence-2-base-ft",
+          displayName: "Florence-2 Base (Microsoft)",
+          modelClass: "Florence2ForConditionalGeneration",
+          processorType: "florence",
+          vramEstimate: "~0.5GB",
+          maxTokens: 150,
+          suggestedInterval: "100",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+          defaultPrompt: "<MORE_DETAILED_CAPTION>",
+        },
+        "florence2-large": {
+          modelId: "onnx-community/Florence-2-large-ft",
+          displayName: "Florence-2 Large (Microsoft)",
+          modelClass: "Florence2ForConditionalGeneration",
+          processorType: "florence",
+          vramEstimate: "~1.5GB",
+          maxTokens: 200,
+          suggestedInterval: "250",
+          showWarning: false,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+          defaultPrompt: "<MORE_DETAILED_CAPTION>",
+        },
+        "paligemma2-3b": {
+          modelId: "onnx-community/paligemma2-3b-pt-224",
+          displayName: "PaliGemma2 3B (Google)",
+          modelClass: "PaliGemmaForConditionalGeneration",
+          processorType: "paligemma",
+          vramEstimate: "~6GB",
+          maxTokens: 150,
+          suggestedInterval: "1000",
+          showWarning: true,
+          dtype: {
+            embed_tokens: "fp16",
+            vision_encoder: "q4",
+            decoder_model_merged: "q4",
+          },
+          chatTemplateSupported: false,
+          imageSize: 224,
+        },
+      };
+
+      const video = document.getElementById("videoFeed");
+      const canvas = document.getElementById("canvas");
+      const instructionText = document.getElementById("instructionText");
+      const responseText = document.getElementById("responseText");
+      const intervalSelect = document.getElementById("intervalSelect");
+      const startButton = document.getElementById("startButton");
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const resizer = document.getElementById("resizer");
+      const topPane = document.getElementById("topPane");
+      const bottomPane = document.getElementById("bottomPane");
+      const modelSelect = document.getElementById("modelSelect");
+      const memoryWarning = document.getElementById("memoryWarning");
+      const loadingModelName = document.getElementById("loadingModelName");
+      const loadingStatus = document.getElementById("loadingStatus");
+
+      instructionText.value = "What do you see?"; // default instruction
+
+      // Model state variables
+      let currentModelKey = null;
+      let selectedModelKey = "smolvlm-500m";
+
+      // Resizer functionality
+      let isResizing = false;
+
+      resizer.addEventListener("mousedown", (e) => {
+        isResizing = true;
+        resizer.classList.add("resizing");
+        document.body.style.cursor = "ns-resize";
+        document.body.style.userSelect = "none";
+        e.preventDefault();
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isResizing) return;
+
+        const containerRect = document.querySelector(".app-container").getBoundingClientRect();
+        const containerHeight = containerRect.height;
+        const resizerHeight = resizer.offsetHeight;
+        const mouseY = e.clientY - containerRect.top;
+
+        const minTopHeight = 100;
+        const minBottomHeight = 150;
+        const maxTopHeight = containerHeight - minBottomHeight - resizerHeight;
+
+        let newTopHeight = Math.max(minTopHeight, Math.min(mouseY, maxTopHeight));
+
+        topPane.style.flex = "none";
+        topPane.style.height = newTopHeight + "px";
+        bottomPane.style.flex = "1";
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (isResizing) {
+          isResizing = false;
+          resizer.classList.remove("resizing");
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+        }
+      });
+
+      let stream;
+      let isProcessing = false;
+
+      let processor, model;
+
+      // Helper function to get model configuration
+      function getModelConfig(modelKey) {
+        return MODEL_CONFIGS[modelKey];
+      }
+
+      // Update memory warning visibility based on model
+      function updateMemoryWarning(modelKey) {
+        const config = getModelConfig(modelKey);
+        if (config && config.showWarning) {
+          memoryWarning.innerHTML = `&#9888; High VRAM (${config.vramEstimate})`;
+          memoryWarning.classList.remove("hidden");
+        } else {
+          memoryWarning.classList.add("hidden");
+        }
+      }
+
+      // Update recommended settings based on model
+      function updateRecommendedSettings(modelKey) {
+        const config = getModelConfig(modelKey);
+        if (config) {
+          intervalSelect.value = config.suggestedInterval;
+        }
+      }
+
+      // Dispose current model to free memory
+      function disposeCurrentModel() {
+        processor = null;
+        model = null;
+        currentModelKey = null;
+        // Hint garbage collection (not guaranteed but helps)
+        if (typeof gc === "function") {
+          gc();
+        }
+      }
+
+      // Initialize model with configuration
+      async function initModel(modelKey) {
+        const config = getModelConfig(modelKey);
+        if (!config) {
+          responseText.value = `Error: Unknown model key "${modelKey}"`;
+          return;
+        }
+
+        loadingOverlay.style.display = "flex";
+        loadingModelName.textContent = config.displayName;
+        loadingStatus.textContent = "Loading processor...";
+        responseText.value = `Loading ${config.displayName}...`;
+
+        try {
+          // Load processor
+          processor = await AutoProcessor.from_pretrained(config.modelId);
+          loadingStatus.textContent = "Processor loaded. Loading model...";
+          responseText.value = `${config.displayName}: Processor loaded. Loading model...`;
+
+          // Load model based on model class
+          if (config.modelClass === "AutoModelForImageTextToText") {
+            model = await AutoModelForImageTextToText.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          } else if (config.modelClass === "Qwen2VLForConditionalGeneration") {
+            model = await Qwen2VLForConditionalGeneration.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          } else if (config.modelClass === "Florence2ForConditionalGeneration") {
+            model = await Florence2ForConditionalGeneration.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          } else if (config.modelClass === "PaliGemmaForConditionalGeneration") {
+            model = await PaliGemmaForConditionalGeneration.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          } else {
+            // Default to AutoModelForVision2Seq
+            model = await AutoModelForVision2Seq.from_pretrained(config.modelId, {
+              dtype: config.dtype,
+              device: "webgpu",
+            });
+          }
+
+          currentModelKey = modelKey;
+          loadingStatus.textContent = "Model loaded!";
+          responseText.value = `${config.displayName} loaded. Initializing screen share...`;
+          loadingOverlay.style.display = "none";
+        } catch (error) {
+          console.error("Error loading model:", error);
+          loadingOverlay.style.display = "none";
+          currentModelKey = null;
+          
+          // Check for memory-related errors
+          if (error.message && (error.message.includes("memory") || error.message.includes("OOM"))) {
+            responseText.value = `Error: Out of GPU memory loading ${config.displayName}. Try a smaller model like SmolVLM 256M.`;
+            alert(`Out of GPU memory. Try selecting a smaller model like SmolVLM 256M (Fast).`);
+          } else {
+            responseText.value = `Error loading ${config.displayName}: ${error.message}`;
+          }
+        }
+      }
+
+      // Handle model selection change
+      async function handleModelChange() {
+        const newModelKey = modelSelect.value;
+        
+        // If same model, do nothing
+        if (newModelKey === currentModelKey) {
+          return;
+        }
+
+        // If processing, prevent model change
+        if (isProcessing) {
+          alert("Please stop processing before switching models.");
+          modelSelect.value = currentModelKey || selectedModelKey;
+          return;
+        }
+
+        // Update UI
+        updateMemoryWarning(newModelKey);
+        updateRecommendedSettings(newModelKey);
+        selectedModelKey = newModelKey;
+
+        // Dispose current model and load new one
+        disposeCurrentModel();
+        await initModel(newModelKey);
+
+        // Re-initialize screen share if not active
+        if (!stream) {
+          await initScreenShare();
+        }
+      }
+
+      async function initScreenShare() {
+        try {
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+          });
+          video.srcObject = stream;
+          responseText.value = "Screen sharing started. Ready to process.";
+        } catch (err) {
+          console.error("Error starting screen share:", err);
+          responseText.value = `Error starting screen share: ${err.name} - ${err.message}. You may have cancelled the picker or are not on HTTPS/localhost.`;
+          alert(
+            `Error starting screen share: ${err.name}. You may have cancelled the picker or need to be on HTTPS/localhost.`
+          );
+        }
+      }
+
+      function captureImage() {
+        if (!stream || !video.videoWidth) {
+          console.warn("Video stream not ready for capture.");
+          return null;
+        }
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        return new RawImage(frame.data, frame.width, frame.height, 4);
+      }
+
+      // Helper function to resize RawImage to target dimensions
+      async function resizeImage(rawImage, targetSize) {
+        if (!targetSize) return rawImage;
+        return await rawImage.resize(targetSize, targetSize);
+      }
+
+      async function runLocalVisionInference(imgElement, instruction) {
+        const config = getModelConfig(currentModelKey);
+        const maxTokens = config ? config.maxTokens : 100;
+        const processorType = config ? config.processorType : "smolvlm";
+
+        let messages, text, inputs;
+        let processedImage = imgElement;
+
+        // Resize image if model requires specific dimensions
+        if (config && config.imageSize) {
+          processedImage = await resizeImage(imgElement, config.imageSize);
+        }
+
+        if (processorType === "fastvlm") {
+          // FastVLM: inline <image> token, image-first processor call
+          messages = [
+            {
+              role: "user",
+              content: "<image>" + instruction,
+            },
+          ];
+          text = processor.apply_chat_template(messages, {
+            add_generation_prompt: true,
+          });
+          inputs = await processor(processedImage, text, {
+            add_special_tokens: false,
+          });
+        } else if (processorType === "qwen2vl") {
+          // Qwen2-VL: structured content array, similar to SmolVLM
+          messages = [
+            {
+              role: "user",
+              content: [{ type: "image" }, { type: "text", text: instruction }],
+            },
+          ];
+          text = processor.apply_chat_template(messages, {
+            add_generation_prompt: true,
+          });
+          inputs = await processor(text, processedImage, {
+            add_special_tokens: false,
+          });
+        } else if (processorType === "florence") {
+          // Florence-2: task prefix prompts, no chat template
+          // Use defaultPrompt from config or map instruction to task
+          let taskPrompt = config.defaultPrompt || "<MORE_DETAILED_CAPTION>";
+          
+          // Allow user to override with specific task prefixes
+          if (instruction.startsWith("<")) {
+            taskPrompt = instruction;
+          }
+          
+          inputs = await processor(processedImage, taskPrompt);
+        } else if (processorType === "paligemma") {
+          // PaliGemma: space-prefixed text prompt, no chat template
+          const prompt = " " + instruction;
+          inputs = await processor(processedImage, prompt);
+        } else {
+          // SmolVLM: structured content array, text-first processor call
+          messages = [
+            {
+              role: "user",
+              content: [{ type: "image" }, { type: "text", text: instruction }],
+            },
+          ];
+          text = processor.apply_chat_template(messages, {
+            add_generation_prompt: true,
+          });
+          inputs = await processor(text, [processedImage], {
+            do_image_splitting: false,
+          });
+        }
+
+        const generatedIds = await model.generate({
+          ...inputs,
+          max_new_tokens: maxTokens,
+        });
+        const output = processor.batch_decode(
+          generatedIds.slice(null, [inputs.input_ids.dims.at(-1), null]),
+          { skip_special_tokens: true }
+        );
+        return output[0].trim();
+      }
+
+      async function sendData() {
+        if (!isProcessing) return;
+        const instruction = instructionText.value;
+        const rawImg = captureImage();
+        if (!rawImg) {
+          responseText.value = "Capture failed";
+          return;
+        }
+        try {
+          const reply = await runLocalVisionInference(rawImg, instruction);
+          responseText.value = reply;
+        } catch (e) {
+          console.error(e);
+          responseText.value = `Error: ${e.message}`;
+        }
+      }
+
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      async function processingLoop() {
+        const intervalMs = parseInt(intervalSelect.value, 10);
+        while (isProcessing) {
+          await sendData();
+          if (!isProcessing) break;
+          await sleep(intervalMs);
+        }
+      }
+
+      function handleStart() {
+        if (!stream) {
+          responseText.value = "Screen share not available. Cannot start.";
+          alert("Screen share not active. Please start screen sharing first.");
+          return;
+        }
+        if (!currentModelKey) {
+          responseText.value = "Model not loaded. Please wait for model to load.";
+          alert("Model not loaded yet. Please wait or select a model.");
+          return;
+        }
+        isProcessing = true;
+        startButton.textContent = "Stop";
+        startButton.classList.replace("start", "stop");
+
+        instructionText.disabled = true;
+        intervalSelect.disabled = true;
+        modelSelect.disabled = true;
+
+        responseText.value = "Processing started...";
+
+        processingLoop();
+      }
+
+      function handleStop() {
+        isProcessing = false;
+        startButton.textContent = "Start";
+        startButton.classList.replace("stop", "start");
+
+        instructionText.disabled = false;
+        intervalSelect.disabled = false;
+        modelSelect.disabled = false;
+        
+        if (responseText.value.startsWith("Processing started...")) {
+          responseText.value = "Processing stopped.";
+        }
+      }
+
+      startButton.addEventListener("click", () => {
+        if (isProcessing) {
+          handleStop();
+        } else {
+          handleStart();
+        }
+      });
+
+      // Model selector change event listener
+      modelSelect.addEventListener("change", handleModelChange);
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        // Check for WebGPU support
+        if (!navigator.gpu) {
+          const videoElement = document.getElementById("videoFeed");
+          const warningElement = document.createElement("p");
+          warningElement.textContent =
+            "WebGPU is not available in this browser.";
+          warningElement.style.color = "red";
+          warningElement.style.textAlign = "center";
+          videoElement.parentNode.insertBefore(
+            warningElement,
+            videoElement.nextSibling
+          );
+        }
+
+        // Get initial model selection from dropdown
+        selectedModelKey = modelSelect.value;
+        
+        // Update memory warning for initial selection
+        updateMemoryWarning(selectedModelKey);
+
+        // Initialize with selected model
+        await initModel(selectedModelKey);
+        await initScreenShare();
+      });
+
+      window.addEventListener("beforeunload", () => {
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+      });
+    </script>
+  </body>
+</html>
