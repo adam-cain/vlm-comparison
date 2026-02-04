@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VLM Comparison</title>
+
     <style>
       * {
         box-sizing: border-box;
@@ -274,13 +275,528 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #444;
       }
+
+      /* Video Source Controls */
+      .video-source-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background-color: #161616;
+        border-bottom: 1px solid #2a2a2a;
+        flex-shrink: 0;
+      }
+      .video-source-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .video-source-btn:hover {
+        border-color: #3a3a3a;
+        background-color: #222;
+      }
+      .video-source-btn.active {
+        border-color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+      }
+      .video-source-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .video-source-btn.recording {
+        border-color: #ef4444;
+        background-color: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        animation: pulse-recording 1.5s infinite;
+      }
+      @keyframes pulse-recording {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+      }
+
+      /* Recording Indicator */
+      .recording-indicator {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        background-color: rgba(0, 0, 0, 0.75);
+        border-radius: 4px;
+        z-index: 5;
+      }
+      .recording-indicator.hidden {
+        display: none;
+      }
+      .recording-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #ef4444;
+        border-radius: 50%;
+        animation: pulse-dot 1s infinite;
+      }
+      @keyframes pulse-dot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(0.9); }
+      }
+      .recording-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: #ef4444;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      /* Mode Toggle */
+      .mode-toggle {
+        display: flex;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .mode-toggle-option {
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        background-color: #1a1a1a;
+        color: #888;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .mode-toggle-option:first-child {
+        border-right: 1px solid #2a2a2a;
+      }
+      .mode-toggle-option:hover {
+        background-color: #222;
+        color: #e0e0e0;
+      }
+      .mode-toggle-option.active {
+        background-color: #3b82f6;
+        color: white;
+      }
+
+      /* Benchmark Panel */
+      .benchmark-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 12px 16px;
+        background-color: #161616;
+        border-bottom: 1px solid #2a2a2a;
+        flex-shrink: 0;
+      }
+      .benchmark-panel.hidden {
+        display: none;
+      }
+      .benchmark-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .benchmark-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .benchmark-section-label {
+        font-weight: 500;
+        font-size: 11px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .model-checklist {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        max-height: 120px;
+        overflow-y: auto;
+        padding: 8px;
+        background-color: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        min-width: 400px;
+      }
+      .model-checkbox-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background-color: #222;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        white-space: nowrap;
+      }
+      .model-checkbox-item:hover {
+        background-color: #2a2a2a;
+      }
+      .model-checkbox-item input[type="checkbox"] {
+        cursor: pointer;
+        accent-color: #3b82f6;
+      }
+      .model-checkbox-item label {
+        font-size: 12px;
+        color: #c0c0c0;
+        cursor: pointer;
+      }
+      .model-checkbox-item .vram-hint {
+        font-size: 10px;
+        color: #666;
+      }
+      .select-all-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #2a2a2a;
+        border-radius: 4px;
+        background-color: #1a1a1a;
+        color: #888;
+        transition: all 0.2s ease;
+      }
+      .select-all-btn:hover {
+        border-color: #3a3a3a;
+        color: #e0e0e0;
+      }
+
+      /* Benchmark Progress */
+      .benchmark-progress-container {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+      .benchmark-progress-container.hidden {
+        display: none;
+      }
+      .benchmark-progress-bar {
+        height: 6px;
+        background-color: #2a2a2a;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .benchmark-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+        width: 0%;
+      }
+      .benchmark-progress-text {
+        font-size: 12px;
+        color: #888;
+      }
+      .benchmark-progress-text .model-name {
+        color: #60a5fa;
+        font-weight: 500;
+      }
+
+      /* Benchmark Actions */
+      .benchmark-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .benchmark-btn {
+        padding: 10px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.2s ease;
+      }
+      .benchmark-btn.run {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+      }
+      .benchmark-btn.run:hover:not(:disabled) {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+        transform: translateY(-1px);
+      }
+      .benchmark-btn.run:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .benchmark-btn.cancel {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+      }
+      .benchmark-btn.cancel:hover {
+        background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+      }
+      .benchmark-btn.cancel.hidden {
+        display: none;
+      }
+
+      /* Results Container */
+      .results-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .results-container.hidden {
+        display: none;
+      }
+      .results-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        background-color: #161616;
+        border-bottom: 1px solid #2a2a2a;
+        flex-shrink: 0;
+      }
+      .results-video-preview {
+        width: 200px;
+        height: 120px;
+        background-color: #0a0a0a;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .results-video-preview video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .results-video-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .results-video-time {
+        font-size: 14px;
+        font-family: 'SF Mono', monospace;
+        color: #e0e0e0;
+      }
+      .results-video-scrubber {
+        width: 200px;
+        cursor: pointer;
+        accent-color: #3b82f6;
+      }
+
+      /* Results Table */
+      .results-table-container {
+        flex: 1;
+        overflow: auto;
+        min-height: 0;
+      }
+      .results-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .results-table th {
+        position: sticky;
+        top: 0;
+        background-color: #1a1a1a;
+        padding: 10px 12px;
+        text-align: left;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #2a2a2a;
+        z-index: 1;
+      }
+      .results-table th:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        background-color: #1a1a1a;
+      }
+      .results-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e1e1e;
+        color: #c0c0c0;
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: top;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+      .results-table td:first-child {
+        position: sticky;
+        left: 0;
+        background-color: #111;
+        font-family: 'SF Mono', monospace;
+        color: #888;
+        font-size: 12px;
+        white-space: nowrap;
+        cursor: default;
+      }
+      .results-table tr:hover td {
+        background-color: #1a1a1a;
+      }
+      .results-table tr:hover td:first-child {
+        background-color: #1a1a1a;
+      }
+      .results-table tr.highlighted td {
+        background-color: rgba(59, 130, 246, 0.15);
+      }
+      .results-table tr.highlighted td:first-child {
+        background-color: rgba(59, 130, 246, 0.15);
+      }
+      .results-table td:hover:not(:first-child) {
+        background-color: #222;
+      }
+      .latency-badge {
+        font-size: 10px;
+        color: #666;
+        margin-left: 6px;
+      }
+
+      /* Cell Expand Modal */
+      .cell-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+      }
+      .cell-modal-overlay.hidden {
+        display: none;
+      }
+      .cell-modal {
+        background-color: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        max-width: 600px;
+        max-height: 80vh;
+        width: 90%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      }
+      .cell-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid #2a2a2a;
+      }
+      .cell-modal-title {
+        font-weight: 600;
+        color: #e0e0e0;
+      }
+      .cell-modal-meta {
+        font-size: 12px;
+        color: #888;
+      }
+      .cell-modal-close {
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 8px;
+        transition: color 0.2s ease;
+      }
+      .cell-modal-close:hover {
+        color: #e0e0e0;
+      }
+      .cell-modal-content {
+        padding: 16px;
+        overflow-y: auto;
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #c0c0c0;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* Export Controls */
+      .export-controls {
+        display: flex;
+        gap: 8px;
+        padding: 10px 12px;
+        background-color: #161616;
+        border-top: 1px solid #2a2a2a;
+        flex-shrink: 0;
+      }
+      .export-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        transition: all 0.2s ease;
+      }
+      .export-btn:hover {
+        border-color: #3a3a3a;
+        background-color: #222;
+      }
+      .export-btn.clear {
+        margin-left: auto;
+        color: #f87171;
+        border-color: rgba(239, 68, 68, 0.3);
+      }
+      .export-btn.clear:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.5);
+      }
+
+      /* Live mode controls visibility */
+      .live-mode-controls.hidden {
+        display: none;
+      }
     </style>
   </head>
   <body>
     <div class="app-container">
+      <!-- Video Source Controls -->
+      <div class="video-source-controls">
+        <button id="uploadVideoBtn" class="video-source-btn">Upload Video</button>
+        <button id="screenShareBtn" class="video-source-btn">Screen Share</button>
+        <button id="recordBtn" class="video-source-btn" disabled>Record</button>
+        <input type="file" id="videoFileInput" accept="video/*" class="hidden" />
+        <span id="videoSourceStatus" style="font-size: 12px; color: #666; margin-left: 8px;"></span>
+      </div>
+
       <div class="top-pane" id="topPane">
         <div id="videoContainer">
           <video id="videoFeed" autoplay playsinline></video>
+          <!-- Recording Indicator -->
+          <div id="recordingIndicator" class="recording-indicator hidden">
+            <div class="recording-dot"></div>
+            <span class="recording-text">REC</span>
+          </div>
           <div id="loadingOverlay">
             <div class="loading-content">
               <span id="loadingModelName" class="loading-model-name"></span>
@@ -294,43 +810,102 @@
       <div class="resizer" id="resizer"></div>
 
       <div class="bottom-pane" id="bottomPane">
-        <div class="instruction-row">
-          <label for="modelSelect">Model:</label>
-          <select id="modelSelect" name="Model">
-            <option value="smolvlm-256m">SmolVLM 256M (Fast)</option>
-            <option value="florence2-base-pretrain">Florence-2 Base PT (Microsoft)</option>
-            <option value="florence2-base">Florence-2 Base FT (Microsoft)</option>
-            <option value="fastvlm-05b">FastVLM 0.5B (Apple)</option>
-            <option value="smolvlm-500m" selected>SmolVLM 500M (Balanced)</option>
-            <option value="janus-pro-1b">Janus-Pro 1B (DeepSeek)</option>
-            <option value="florence2-large">Florence-2 Large (Microsoft)</option>
-            <option value="moondream2">Moondream2 (Xenova)</option>
-            <option value="janus-1.3b">Janus 1.3B (DeepSeek)</option>
-            <option value="smolvlm-2b">SmolVLM 2B (Capable)</option>
-            <option value="qwen2vl-2b">Qwen2-VL 2B (Alibaba)</option>
-            <option value="paligemma2-3b">PaliGemma2 3B (Google)</option>
-            <option value="phi3-vision">Phi-3 Vision (Microsoft)</option>
-          </select>
-          <span id="memoryWarning" class="hidden">&#9888; High VRAM (~4GB)</span>
-          <label for="instructionText">Instruction:</label>
-          <input
-            type="text"
-            id="instructionText"
-            name="Instruction"
-            placeholder="Enter instruction..."
-          />
-          <label for="intervalSelect">Interval:</label>
-          <select id="intervalSelect" name="Interval">
-            <option value="0" selected>0ms</option>
-            <option value="100">100ms</option>
-            <option value="250">250ms</option>
-            <option value="500">500ms</option>
-            <option value="1000">1s</option>
-            <option value="2000">2s</option>
-          </select>
-          <button id="startButton" class="start">Start</button>
+        <!-- Mode Toggle Row -->
+        <div class="instruction-row" style="gap: 16px;">
+          <div class="mode-toggle">
+            <button id="liveModeBtn" class="mode-toggle-option active">Live</button>
+            <button id="benchmarkModeBtn" class="mode-toggle-option">Benchmark</button>
+          </div>
+
+          <!-- Live Mode Controls -->
+          <div id="liveModeControls" class="live-mode-controls" style="display: flex; align-items: center; gap: 12px; flex: 1;">
+            <label for="modelSelect">Model:</label>
+            <select id="modelSelect" name="Model">
+              <option value="smolvlm-256m">SmolVLM 256M (Fast)</option>
+              <option value="florence2-base-pretrain">Florence-2 Base PT (Microsoft)</option>
+              <option value="florence2-base">Florence-2 Base FT (Microsoft)</option>
+              <option value="fastvlm-05b">FastVLM 0.5B (Apple)</option>
+              <option value="smolvlm-500m" selected>SmolVLM 500M (Balanced)</option>
+              <option value="janus-pro-1b">Janus-Pro 1B (DeepSeek)</option>
+              <option value="florence2-large">Florence-2 Large (Microsoft)</option>
+              <option value="moondream2">Moondream2 (Xenova)</option>
+              <option value="janus-1.3b">Janus 1.3B (DeepSeek)</option>
+              <option value="smolvlm-2b">SmolVLM 2B (Capable)</option>
+              <option value="qwen2vl-2b">Qwen2-VL 2B (Alibaba)</option>
+              <option value="paligemma2-3b">PaliGemma2 3B (Google)</option>
+              <option value="phi3-vision">Phi-3 Vision (Microsoft)</option>
+            </select>
+            <span id="memoryWarning" class="hidden">&#9888; High VRAM (~4GB)</span>
+            <label for="instructionText">Instruction:</label>
+            <input
+              type="text"
+              id="instructionText"
+              name="Instruction"
+              placeholder="Enter instruction..."
+            />
+            <label for="intervalSelect">Interval:</label>
+            <select id="intervalSelect" name="Interval">
+              <option value="0" selected>0ms</option>
+              <option value="100">100ms</option>
+              <option value="250">250ms</option>
+              <option value="500">500ms</option>
+              <option value="1000">1s</option>
+              <option value="2000">2s</option>
+            </select>
+            <button id="startButton" class="start">Start</button>
+          </div>
         </div>
-        <div class="response-section">
+
+        <!-- Benchmark Configuration Panel -->
+        <div id="benchmarkPanel" class="benchmark-panel hidden">
+          <div class="benchmark-row">
+            <div class="benchmark-section">
+              <span class="benchmark-section-label">Select Models</span>
+              <div style="display: flex; gap: 8px; align-items: flex-start;">
+                <div id="modelChecklist" class="model-checklist">
+                  <!-- Model checkboxes will be populated by JavaScript -->
+                </div>
+                <button id="selectAllModelsBtn" class="select-all-btn">Select All</button>
+              </div>
+            </div>
+
+            <div class="benchmark-section">
+              <span class="benchmark-section-label">Configuration</span>
+              <div style="display: flex; gap: 12px; align-items: center;">
+                <label for="benchmarkInstruction" style="font-size: 12px; color: #888;">Instruction:</label>
+                <input
+                  type="text"
+                  id="benchmarkInstruction"
+                  placeholder="Enter instruction..."
+                  style="padding: 8px 12px; background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0; font-size: 13px; width: 200px;"
+                  value="What do you see?"
+                />
+                <label for="benchmarkInterval" style="font-size: 12px; color: #888;">Interval:</label>
+                <select id="benchmarkInterval" style="padding: 8px 12px; background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0; font-size: 13px;">
+                  <option value="500">500ms</option>
+                  <option value="1000" selected>1s</option>
+                  <option value="2000">2s</option>
+                  <option value="5000">5s</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="benchmark-actions">
+              <button id="runBenchmarkBtn" class="benchmark-btn run" disabled>Run Benchmark</button>
+              <button id="cancelBenchmarkBtn" class="benchmark-btn cancel hidden">Cancel</button>
+            </div>
+          </div>
+
+          <div id="benchmarkProgressContainer" class="benchmark-progress-container hidden">
+            <div class="benchmark-progress-bar">
+              <div id="benchmarkProgressFill" class="benchmark-progress-fill"></div>
+            </div>
+            <span id="benchmarkProgressText" class="benchmark-progress-text">Preparing benchmark...</span>
+          </div>
+        </div>
+
+        <!-- Live Mode Response Section -->
+        <div id="responseSection" class="response-section">
           <label for="responseText">Response:</label>
           <textarea
             id="responseText"
@@ -338,6 +913,57 @@
             readonly
             placeholder="Server response will appear here..."
           ></textarea>
+        </div>
+
+        <!-- Benchmark Results Container -->
+        <div id="resultsContainer" class="results-container hidden">
+          <div class="results-header">
+            <div class="results-video-preview">
+              <video id="resultsVideo" muted></video>
+            </div>
+            <div class="results-video-controls">
+              <span id="resultsVideoTime" class="results-video-time">0:00 / 0:00</span>
+              <input type="range" id="resultsVideoScrubber" class="results-video-scrubber" min="0" max="100" value="0" />
+              <button id="resultsPlayPauseBtn" class="video-source-btn" style="padding: 6px 12px;">Play</button>
+            </div>
+            <div style="flex: 1;"></div>
+            <div id="benchmarkSummary" style="font-size: 12px; color: #888; text-align: right;">
+              <div>Models: <span id="summaryModelCount">0</span></div>
+              <div>Frames: <span id="summaryFrameCount">0</span></div>
+            </div>
+          </div>
+          <div class="results-table-container">
+            <table id="resultsTable" class="results-table">
+              <thead>
+                <tr id="resultsTableHeader">
+                  <th>Time</th>
+                  <!-- Model columns will be added dynamically -->
+                </tr>
+              </thead>
+              <tbody id="resultsTableBody">
+                <!-- Results rows will be added dynamically -->
+              </tbody>
+            </table>
+          </div>
+          <div class="export-controls">
+            <button id="exportJSONBtn" class="export-btn">Export JSON</button>
+            <button id="exportCSVBtn" class="export-btn">Export CSV</button>
+            <button id="clearResultsBtn" class="export-btn clear">Clear Results</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cell Expand Modal -->
+      <div id="cellModal" class="cell-modal-overlay hidden">
+        <div class="cell-modal">
+          <div class="cell-modal-header">
+            <div>
+              <div id="cellModalTitle" class="cell-modal-title">Model Output</div>
+              <div id="cellModalMeta" class="cell-modal-meta">Frame 0 • 0ms latency</div>
+            </div>
+            <button id="cellModalClose" class="cell-modal-close">&times;</button>
+          </div>
+          <div id="cellModalContent" class="cell-modal-content"></div>
         </div>
       </div>
     </div>
@@ -594,6 +1220,16 @@
       // Model state variables
       let currentModelKey = null;
       let selectedModelKey = "smolvlm-500m";
+
+      // Benchmark state variables
+      let appMode = "live"; // "live" or "benchmark"
+      let videoSource = "none"; // "none", "upload", "screenshare", "recording"
+      let uploadedVideoBlob = null;
+      let recordedVideoBlob = null;
+      let mediaRecorder = null;
+      let recordingChunks = [];
+      let isRecording = false;
+      let benchmarkSession = null;
 
       // Resizer functionality
       let isResizing = false;
@@ -1006,6 +1642,762 @@
         }
       }
 
+      // ========== VIDEO SOURCE FUNCTIONS ==========
+
+      // Handle video file upload
+      function handleVideoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith("video/")) {
+          alert("Please select a valid video file.");
+          return;
+        }
+
+        uploadedVideoBlob = file;
+        const objectURL = URL.createObjectURL(file);
+        
+        // Set video source
+        video.srcObject = null;
+        video.src = objectURL;
+        video.muted = true;
+        video.loop = true;
+        video.play();
+
+        videoSource = "upload";
+        updateVideoSourceUI();
+        validateBenchmarkReady();
+
+        document.getElementById("videoSourceStatus").textContent = `Loaded: ${file.name}`;
+      }
+
+      // Handle screen share
+      async function handleScreenShareBtn() {
+        try {
+          // Stop any existing stream
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+
+          stream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+          });
+          
+          video.srcObject = stream;
+          video.src = "";
+          videoSource = "screenshare";
+          updateVideoSourceUI();
+          
+          // Enable record button
+          document.getElementById("recordBtn").disabled = false;
+          document.getElementById("videoSourceStatus").textContent = "Screen sharing active";
+
+          // Load model if not loaded (for live mode)
+          if (!currentModelKey && appMode === "live") {
+            await initModel(selectedModelKey);
+          }
+
+          // Handle stream end
+          stream.getVideoTracks()[0].onended = () => {
+            videoSource = "none";
+            stream = null;
+            updateVideoSourceUI();
+            document.getElementById("recordBtn").disabled = true;
+            document.getElementById("videoSourceStatus").textContent = "";
+          };
+        } catch (err) {
+          console.error("Error starting screen share:", err);
+          alert(`Error starting screen share: ${err.name}. You may have cancelled the picker.`);
+        }
+      }
+
+      // Start recording screen share
+      function startRecording() {
+        if (!stream) {
+          alert("Please start screen sharing first.");
+          return;
+        }
+
+        recordingChunks = [];
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType: "video/webm;codecs=vp9"
+        });
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordingChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          recordedVideoBlob = new Blob(recordingChunks, { type: "video/webm" });
+          const objectURL = URL.createObjectURL(recordedVideoBlob);
+          
+          // Stop screen share
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            stream = null;
+          }
+
+          // Set recorded video as source
+          video.srcObject = null;
+          video.src = objectURL;
+          video.muted = true;
+          video.loop = true;
+          video.play();
+
+          videoSource = "recording";
+          isRecording = false;
+          updateVideoSourceUI();
+          validateBenchmarkReady();
+
+          document.getElementById("recordBtn").disabled = true;
+          document.getElementById("videoSourceStatus").textContent = "Recording saved";
+        };
+
+        mediaRecorder.start(1000); // Collect data every second
+        isRecording = true;
+        updateVideoSourceUI();
+        document.getElementById("videoSourceStatus").textContent = "Recording...";
+      }
+
+      // Stop recording
+      function stopRecording() {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+          mediaRecorder.stop();
+        }
+        document.getElementById("recordingIndicator").classList.add("hidden");
+      }
+
+      // Update video source button states
+      function updateVideoSourceUI() {
+        const uploadBtn = document.getElementById("uploadVideoBtn");
+        const screenShareBtn = document.getElementById("screenShareBtn");
+        const recordBtn = document.getElementById("recordBtn");
+        const recordingIndicator = document.getElementById("recordingIndicator");
+
+        // Reset all buttons
+        uploadBtn.classList.remove("active");
+        screenShareBtn.classList.remove("active", "recording");
+        recordBtn.classList.remove("recording");
+
+        if (videoSource === "upload") {
+          uploadBtn.classList.add("active");
+        } else if (videoSource === "screenshare") {
+          screenShareBtn.classList.add("active");
+          if (isRecording) {
+            recordBtn.classList.add("recording");
+            recordBtn.textContent = "Stop Recording";
+            recordingIndicator.classList.remove("hidden");
+          } else {
+            recordBtn.textContent = "Record";
+            recordingIndicator.classList.add("hidden");
+          }
+        } else if (videoSource === "recording") {
+          recordBtn.classList.add("active");
+          recordingIndicator.classList.add("hidden");
+        } else {
+          recordingIndicator.classList.add("hidden");
+        }
+      }
+
+      // ========== MODE TOGGLE FUNCTIONS ==========
+
+      function toggleMode(newMode) {
+        if (appMode === newMode) return;
+        
+        // Don't allow mode switch during processing
+        if (isProcessing) {
+          alert("Please stop processing before switching modes.");
+          return;
+        }
+        if (benchmarkSession && benchmarkSession.status === "running") {
+          alert("Please wait for or cancel the benchmark before switching modes.");
+          return;
+        }
+
+        appMode = newMode;
+        
+        const liveModeBtn = document.getElementById("liveModeBtn");
+        const benchmarkModeBtn = document.getElementById("benchmarkModeBtn");
+        const liveModeControls = document.getElementById("liveModeControls");
+        const benchmarkPanel = document.getElementById("benchmarkPanel");
+        const responseSection = document.getElementById("responseSection");
+        const resultsContainer = document.getElementById("resultsContainer");
+
+        if (appMode === "live") {
+          liveModeBtn.classList.add("active");
+          benchmarkModeBtn.classList.remove("active");
+          liveModeControls.classList.remove("hidden");
+          benchmarkPanel.classList.add("hidden");
+          responseSection.classList.remove("hidden");
+          resultsContainer.classList.add("hidden");
+        } else {
+          liveModeBtn.classList.remove("active");
+          benchmarkModeBtn.classList.add("active");
+          liveModeControls.classList.add("hidden");
+          benchmarkPanel.classList.remove("hidden");
+          responseSection.classList.add("hidden");
+          // Show results if we have them
+          if (benchmarkSession && benchmarkSession.results && benchmarkSession.results.length > 0) {
+            resultsContainer.classList.remove("hidden");
+          }
+        }
+
+        validateBenchmarkReady();
+      }
+
+      // ========== BENCHMARK FUNCTIONS ==========
+
+      // Populate model checklist
+      function updateModelChecklist() {
+        const checklist = document.getElementById("modelChecklist");
+        checklist.innerHTML = "";
+
+        for (const [key, config] of Object.entries(MODEL_CONFIGS)) {
+          const item = document.createElement("div");
+          item.className = "model-checkbox-item";
+          item.innerHTML = `
+            <input type="checkbox" id="model-${key}" value="${key}" />
+            <label for="model-${key}">${config.displayName}</label>
+            <span class="vram-hint">${config.vramEstimate}</span>
+          `;
+          checklist.appendChild(item);
+        }
+      }
+
+      // Toggle select all models
+      function toggleSelectAllModels() {
+        const checkboxes = document.querySelectorAll("#modelChecklist input[type='checkbox']");
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        checkboxes.forEach(cb => {
+          cb.checked = !allChecked;
+        });
+
+        document.getElementById("selectAllModelsBtn").textContent = allChecked ? "Select All" : "Deselect All";
+        validateBenchmarkReady();
+      }
+
+      // Get selected models
+      function getSelectedModels() {
+        const checkboxes = document.querySelectorAll("#modelChecklist input[type='checkbox']:checked");
+        return Array.from(checkboxes).map(cb => cb.value);
+      }
+
+      // Validate if benchmark can be run
+      function validateBenchmarkReady() {
+        const runBtn = document.getElementById("runBenchmarkBtn");
+        const hasVideo = videoSource === "upload" || videoSource === "recording";
+        const hasModels = getSelectedModels().length > 0;
+        
+        runBtn.disabled = !(hasVideo && hasModels);
+      }
+
+      // Generate UUID
+      function generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c === 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+
+      // Initialize benchmark session
+      function initBenchmarkSession() {
+        const selectedModels = getSelectedModels();
+        const instruction = document.getElementById("benchmarkInstruction").value || "What do you see?";
+        const intervalMs = parseInt(document.getElementById("benchmarkInterval").value, 10);
+        const videoDuration = video.duration || 0;
+        const totalFrames = Math.ceil(videoDuration / (intervalMs / 1000));
+
+        benchmarkSession = {
+          id: generateUUID(),
+          createdAt: Date.now(),
+          videoSource: videoSource,
+          videoDuration: videoDuration,
+          frameInterval: intervalMs,
+          totalFrames: totalFrames,
+          instruction: instruction,
+          models: selectedModels,
+          status: "idle",
+          currentModelIndex: 0,
+          currentFrameIndex: 0,
+          results: selectedModels.map(modelKey => ({
+            modelKey: modelKey,
+            modelDisplayName: MODEL_CONFIGS[modelKey].displayName,
+            status: "pending",
+            startTime: null,
+            endTime: null,
+            totalLatencyMs: 0,
+            entries: []
+          }))
+        };
+
+        return benchmarkSession;
+      }
+
+      // Run benchmark
+      async function runBenchmark() {
+        // Validate
+        const hasVideo = videoSource === "upload" || videoSource === "recording";
+        if (!hasVideo) {
+          alert("Please upload a video or record screen share first.");
+          return;
+        }
+
+        const selectedModels = getSelectedModels();
+        if (selectedModels.length === 0) {
+          alert("Please select at least one model to benchmark.");
+          return;
+        }
+
+        // Wait for video metadata if needed
+        if (!video.duration || isNaN(video.duration)) {
+          await new Promise(resolve => {
+            video.onloadedmetadata = resolve;
+            setTimeout(resolve, 1000); // Timeout fallback
+          });
+        }
+
+        // Initialize session
+        initBenchmarkSession();
+        benchmarkSession.status = "running";
+
+        // Update UI
+        document.getElementById("runBenchmarkBtn").classList.add("hidden");
+        document.getElementById("cancelBenchmarkBtn").classList.remove("hidden");
+        document.getElementById("benchmarkProgressContainer").classList.remove("hidden");
+        document.getElementById("modelChecklist").style.pointerEvents = "none";
+        document.getElementById("benchmarkInstruction").disabled = true;
+        document.getElementById("benchmarkInterval").disabled = true;
+
+        // Pause video
+        video.pause();
+        video.currentTime = 0;
+
+        try {
+          await processBenchmarkSequentially();
+        } catch (error) {
+          console.error("Benchmark error:", error);
+          benchmarkSession.status = "failed";
+        }
+
+        // Re-enable UI
+        document.getElementById("runBenchmarkBtn").classList.remove("hidden");
+        document.getElementById("cancelBenchmarkBtn").classList.add("hidden");
+        document.getElementById("modelChecklist").style.pointerEvents = "auto";
+        document.getElementById("benchmarkInstruction").disabled = false;
+        document.getElementById("benchmarkInterval").disabled = false;
+
+        if (benchmarkSession.status === "completed" || benchmarkSession.status === "cancelled") {
+          renderResultsTable();
+          document.getElementById("resultsContainer").classList.remove("hidden");
+        }
+      }
+
+      // Process benchmark sequentially through models
+      async function processBenchmarkSequentially() {
+        const progressFill = document.getElementById("benchmarkProgressFill");
+        const progressText = document.getElementById("benchmarkProgressText");
+
+        for (let i = 0; i < benchmarkSession.models.length; i++) {
+          if (benchmarkSession.status === "cancelled") break;
+
+          benchmarkSession.currentModelIndex = i;
+          const modelKey = benchmarkSession.models[i];
+          const modelResult = benchmarkSession.results[i];
+          const config = MODEL_CONFIGS[modelKey];
+
+          progressText.innerHTML = `Loading <span class="model-name">${config.displayName}</span>...`;
+
+          // Dispose current model and load new one
+          disposeCurrentModel();
+          
+          try {
+            await initModel(modelKey);
+            modelResult.status = "running";
+            modelResult.startTime = Date.now();
+
+            await processVideoForModel(modelKey, i);
+
+            modelResult.endTime = Date.now();
+            modelResult.status = "completed";
+          } catch (error) {
+            console.error(`Error with model ${modelKey}:`, error);
+            modelResult.status = "failed";
+            modelResult.entries.push({
+              frameIndex: -1,
+              error: error.message
+            });
+          }
+
+          // Update overall progress
+          const overallProgress = ((i + 1) / benchmarkSession.models.length) * 100;
+          progressFill.style.width = `${overallProgress}%`;
+        }
+
+        if (benchmarkSession.status !== "cancelled") {
+          benchmarkSession.status = "completed";
+        }
+
+        progressText.textContent = benchmarkSession.status === "cancelled" 
+          ? "Benchmark cancelled" 
+          : "Benchmark completed!";
+      }
+
+      // Process video for a single model
+      async function processVideoForModel(modelKey, modelIndex) {
+        const progressText = document.getElementById("benchmarkProgressText");
+        const config = MODEL_CONFIGS[modelKey];
+        const intervalMs = benchmarkSession.frameInterval;
+        const modelResult = benchmarkSession.results[modelIndex];
+
+        // Calculate frame times
+        const frameTimes = [];
+        for (let t = 0; t < benchmarkSession.videoDuration; t += intervalMs / 1000) {
+          frameTimes.push(t);
+        }
+
+        for (let frameIdx = 0; frameIdx < frameTimes.length; frameIdx++) {
+          if (benchmarkSession.status === "cancelled") break;
+
+          benchmarkSession.currentFrameIndex = frameIdx;
+          const frameTime = frameTimes[frameIdx];
+
+          progressText.innerHTML = `Processing <span class="model-name">${config.displayName}</span> - Frame ${frameIdx + 1} of ${frameTimes.length}`;
+
+          // Seek video to frame time
+          video.currentTime = frameTime;
+          await new Promise(resolve => {
+            const onSeeked = () => {
+              video.removeEventListener("seeked", onSeeked);
+              resolve();
+            };
+            video.addEventListener("seeked", onSeeked);
+            // Fallback timeout
+            setTimeout(resolve, 500);
+          });
+
+          // Capture frame
+          const captureTimestamp = Date.now();
+          const rawImg = captureImageFromVideo(video);
+          
+          if (!rawImg) {
+            modelResult.entries.push({
+              frameIndex: frameIdx,
+              frameTimeSeconds: frameTime,
+              captureTimestamp: captureTimestamp,
+              text: "",
+              error: "Frame capture failed",
+              latencyMs: 0
+            });
+            continue;
+          }
+
+          // Run inference
+          const inferenceStart = Date.now();
+          let text = "";
+          let error = null;
+
+          try {
+            text = await runLocalVisionInference(rawImg, benchmarkSession.instruction);
+          } catch (e) {
+            console.error(`Inference error at frame ${frameIdx}:`, e);
+            error = e.message;
+          }
+
+          const inferenceEnd = Date.now();
+          const latencyMs = inferenceEnd - inferenceStart;
+
+          modelResult.entries.push({
+            frameIndex: frameIdx,
+            frameTimeSeconds: frameTime,
+            captureTimestamp: captureTimestamp,
+            inferenceStartTimestamp: inferenceStart,
+            inferenceEndTimestamp: inferenceEnd,
+            latencyMs: latencyMs,
+            text: text,
+            error: error
+          });
+
+          modelResult.totalLatencyMs += latencyMs;
+        }
+      }
+
+      // Capture image from video element (works for both stream and file)
+      function captureImageFromVideo(videoEl) {
+        if (!videoEl.videoWidth || !videoEl.videoHeight) {
+          console.warn("Video not ready for capture.");
+          return null;
+        }
+        canvas.width = videoEl.videoWidth;
+        canvas.height = videoEl.videoHeight;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        context.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
+        return new RawImage(frame.data, frame.width, frame.height, 4);
+      }
+
+      // Cancel benchmark
+      function cancelBenchmark() {
+        if (benchmarkSession) {
+          benchmarkSession.status = "cancelled";
+        }
+      }
+
+      // ========== RESULTS DISPLAY FUNCTIONS ==========
+
+      // Format time as MM:SS
+      function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+      }
+
+      // Render results table
+      function renderResultsTable() {
+        if (!benchmarkSession || !benchmarkSession.results) return;
+
+        const headerRow = document.getElementById("resultsTableHeader");
+        const tableBody = document.getElementById("resultsTableBody");
+        const resultsVideo = document.getElementById("resultsVideo");
+
+        // Set up results video
+        if (videoSource === "upload" && uploadedVideoBlob) {
+          resultsVideo.src = URL.createObjectURL(uploadedVideoBlob);
+        } else if (videoSource === "recording" && recordedVideoBlob) {
+          resultsVideo.src = URL.createObjectURL(recordedVideoBlob);
+        }
+
+        // Update summary
+        document.getElementById("summaryModelCount").textContent = benchmarkSession.results.length;
+        document.getElementById("summaryFrameCount").textContent = benchmarkSession.totalFrames;
+
+        // Build header
+        headerRow.innerHTML = "<th>Time</th>";
+        benchmarkSession.results.forEach(result => {
+          const th = document.createElement("th");
+          th.textContent = result.modelDisplayName;
+          headerRow.appendChild(th);
+        });
+
+        // Build rows
+        tableBody.innerHTML = "";
+        
+        // Find max frames across all models
+        const maxFrames = Math.max(...benchmarkSession.results.map(r => r.entries.length));
+
+        for (let frameIdx = 0; frameIdx < maxFrames; frameIdx++) {
+          const tr = document.createElement("tr");
+          tr.dataset.frameIndex = frameIdx;
+
+          // Get frame time from first model that has this frame
+          let frameTime = 0;
+          for (const result of benchmarkSession.results) {
+            if (result.entries[frameIdx]) {
+              frameTime = result.entries[frameIdx].frameTimeSeconds;
+              break;
+            }
+          }
+
+          // Time cell
+          const timeTd = document.createElement("td");
+          timeTd.textContent = formatTime(frameTime);
+          timeTd.dataset.frameTime = frameTime;
+          tr.appendChild(timeTd);
+
+          // Model cells
+          benchmarkSession.results.forEach((result, modelIdx) => {
+            const td = document.createElement("td");
+            const entry = result.entries[frameIdx];
+            
+            if (entry) {
+              if (entry.error) {
+                td.textContent = `Error: ${entry.error}`;
+                td.style.color = "#f87171";
+              } else {
+                td.textContent = entry.text || "-";
+                const latencyBadge = document.createElement("span");
+                latencyBadge.className = "latency-badge";
+                latencyBadge.textContent = `${entry.latencyMs}ms`;
+                td.appendChild(latencyBadge);
+              }
+              
+              td.dataset.modelIndex = modelIdx;
+              td.dataset.frameIndex = frameIdx;
+              td.addEventListener("click", () => expandCellContent(modelIdx, frameIdx));
+            } else {
+              td.textContent = "-";
+            }
+            
+            tr.appendChild(td);
+          });
+
+          tableBody.appendChild(tr);
+        }
+
+        // Set up video sync
+        setupVideoSync();
+      }
+
+      // Set up video synchronization with table
+      function setupVideoSync() {
+        const resultsVideo = document.getElementById("resultsVideo");
+        const scrubber = document.getElementById("resultsVideoScrubber");
+        const timeDisplay = document.getElementById("resultsVideoTime");
+        const playPauseBtn = document.getElementById("resultsPlayPauseBtn");
+
+        resultsVideo.onloadedmetadata = () => {
+          scrubber.max = resultsVideo.duration;
+          timeDisplay.textContent = `0:00 / ${formatTime(resultsVideo.duration)}`;
+        };
+
+        resultsVideo.ontimeupdate = () => {
+          scrubber.value = resultsVideo.currentTime;
+          timeDisplay.textContent = `${formatTime(resultsVideo.currentTime)} / ${formatTime(resultsVideo.duration)}`;
+          syncVideoToTable();
+        };
+
+        scrubber.oninput = () => {
+          resultsVideo.currentTime = scrubber.value;
+        };
+
+        playPauseBtn.onclick = () => {
+          if (resultsVideo.paused) {
+            resultsVideo.play();
+            playPauseBtn.textContent = "Pause";
+          } else {
+            resultsVideo.pause();
+            playPauseBtn.textContent = "Play";
+          }
+        };
+      }
+
+      // Sync video position to table highlight
+      function syncVideoToTable() {
+        const resultsVideo = document.getElementById("resultsVideo");
+        const currentTime = resultsVideo.currentTime;
+        const rows = document.querySelectorAll("#resultsTableBody tr");
+
+        // Remove existing highlights
+        rows.forEach(row => row.classList.remove("highlighted"));
+
+        // Find and highlight the current row
+        let closestRow = null;
+        let closestDiff = Infinity;
+
+        rows.forEach(row => {
+          const frameTime = parseFloat(row.querySelector("td").dataset.frameTime);
+          const diff = Math.abs(currentTime - frameTime);
+          if (diff < closestDiff && currentTime >= frameTime) {
+            closestDiff = diff;
+            closestRow = row;
+          }
+        });
+
+        if (closestRow) {
+          closestRow.classList.add("highlighted");
+          // Scroll into view if needed
+          closestRow.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+
+      // Sync table click to video position
+      function syncTableToVideo(frameTime) {
+        const resultsVideo = document.getElementById("resultsVideo");
+        resultsVideo.currentTime = frameTime;
+      }
+
+      // Expand cell content in modal
+      function expandCellContent(modelIndex, frameIndex) {
+        const result = benchmarkSession.results[modelIndex];
+        const entry = result.entries[frameIndex];
+        
+        if (!entry) return;
+
+        const modal = document.getElementById("cellModal");
+        const title = document.getElementById("cellModalTitle");
+        const meta = document.getElementById("cellModalMeta");
+        const content = document.getElementById("cellModalContent");
+
+        title.textContent = result.modelDisplayName;
+        meta.textContent = `Frame ${frameIndex + 1} at ${formatTime(entry.frameTimeSeconds)} • ${entry.latencyMs}ms latency`;
+        content.textContent = entry.error ? `Error: ${entry.error}` : entry.text;
+
+        modal.classList.remove("hidden");
+      }
+
+      // Close cell modal
+      function closeCellModal() {
+        document.getElementById("cellModal").classList.add("hidden");
+      }
+
+      // ========== EXPORT FUNCTIONS ==========
+
+      // Export to JSON
+      function exportToJSON() {
+        if (!benchmarkSession) return;
+
+        const json = JSON.stringify(benchmarkSession, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `benchmark-${benchmarkSession.id}-${Date.now()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Export to CSV
+      function exportToCSV() {
+        if (!benchmarkSession) return;
+
+        const rows = [
+          ["frame_index", "frame_time_seconds", "model_key", "model_name", "text", "latency_ms", "error"]
+        ];
+
+        benchmarkSession.results.forEach(result => {
+          result.entries.forEach(entry => {
+            rows.push([
+              entry.frameIndex,
+              entry.frameTimeSeconds,
+              result.modelKey,
+              result.modelDisplayName,
+              `"${(entry.text || "").replace(/"/g, '""')}"`,
+              entry.latencyMs,
+              entry.error || ""
+            ]);
+          });
+        });
+
+        const csv = rows.map(row => row.join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `benchmark-${benchmarkSession.id}-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Clear benchmark results
+      function clearBenchmarkResults() {
+        benchmarkSession = null;
+        document.getElementById("resultsContainer").classList.add("hidden");
+        document.getElementById("resultsTableBody").innerHTML = "";
+        document.getElementById("benchmarkProgressContainer").classList.add("hidden");
+        document.getElementById("benchmarkProgressFill").style.width = "0%";
+        document.getElementById("benchmarkProgressText").textContent = "Preparing benchmark...";
+      }
+
       startButton.addEventListener("click", () => {
         if (isProcessing) {
           handleStop();
@@ -1016,6 +2408,63 @@
 
       // Model selector change event listener
       modelSelect.addEventListener("change", handleModelChange);
+
+      // ========== VIDEO SOURCE EVENT LISTENERS ==========
+      
+      document.getElementById("videoFileInput").addEventListener("change", handleVideoUpload);
+      
+      document.getElementById("uploadVideoBtn").addEventListener("click", () => {
+        document.getElementById("videoFileInput").click();
+      });
+      
+      document.getElementById("screenShareBtn").addEventListener("click", handleScreenShareBtn);
+      
+      document.getElementById("recordBtn").addEventListener("click", () => {
+        if (isRecording) {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      });
+
+      // ========== MODE TOGGLE EVENT LISTENERS ==========
+      
+      document.getElementById("liveModeBtn").addEventListener("click", () => toggleMode("live"));
+      document.getElementById("benchmarkModeBtn").addEventListener("click", () => toggleMode("benchmark"));
+
+      // ========== BENCHMARK EVENT LISTENERS ==========
+      
+      document.getElementById("selectAllModelsBtn").addEventListener("click", toggleSelectAllModels);
+      
+      document.getElementById("modelChecklist").addEventListener("change", validateBenchmarkReady);
+      
+      document.getElementById("runBenchmarkBtn").addEventListener("click", runBenchmark);
+      
+      document.getElementById("cancelBenchmarkBtn").addEventListener("click", cancelBenchmark);
+
+      // ========== RESULTS EVENT LISTENERS ==========
+      
+      document.getElementById("exportJSONBtn").addEventListener("click", exportToJSON);
+      
+      document.getElementById("exportCSVBtn").addEventListener("click", exportToCSV);
+      
+      document.getElementById("clearResultsBtn").addEventListener("click", clearBenchmarkResults);
+      
+      document.getElementById("cellModalClose").addEventListener("click", closeCellModal);
+      
+      document.getElementById("cellModal").addEventListener("click", (e) => {
+        if (e.target.id === "cellModal") {
+          closeCellModal();
+        }
+      });
+
+      // Table row time cell click to sync video
+      document.getElementById("resultsTableBody").addEventListener("click", (e) => {
+        const td = e.target.closest("td:first-child");
+        if (td && td.dataset.frameTime !== undefined) {
+          syncTableToVideo(parseFloat(td.dataset.frameTime));
+        }
+      });
 
       window.addEventListener("DOMContentLoaded", async () => {
         // Check for WebGPU support
@@ -1032,15 +2481,20 @@
           );
         }
 
+        // Initialize model checklist for benchmark mode
+        updateModelChecklist();
+
         // Get initial model selection from dropdown
         selectedModelKey = modelSelect.value;
         
         // Update memory warning for initial selection
         updateMemoryWarning(selectedModelKey);
 
-        // Initialize with selected model
-        await initModel(selectedModelKey);
-        await initScreenShare();
+        // Set default mode to live
+        appMode = "live";
+        
+        // Don't auto-load model or screen share - wait for user action
+        document.getElementById("videoSourceStatus").textContent = "Select a video source to begin";
       });
 
       window.addEventListener("beforeunload", () => {
