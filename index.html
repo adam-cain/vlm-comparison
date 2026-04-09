@@ -152,6 +152,31 @@
       #modelSelect {
         min-width: 180px;
       }
+      #customIntervalInput {
+        width: 80px;
+        padding: 10px 12px;
+        background-color: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        color: #e0e0e0;
+        font-size: 13px;
+        transition: border-color 0.2s ease;
+        -moz-appearance: textfield;
+      }
+      #customIntervalInput::-webkit-inner-spin-button,
+      #customIntervalInput::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      #customIntervalInput:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      }
+      .custom-interval-suffix {
+        font-size: 12px;
+        color: #666;
+      }
       #intervalSelect:hover,
       #modelSelect:hover {
         border-color: #3a3a3a;
@@ -799,6 +824,231 @@
       .live-mode-controls.hidden {
         display: none;
       }
+
+      /* Prompt Engineering Modal */
+      .prompt-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 200;
+        backdrop-filter: blur(4px);
+      }
+      .prompt-modal-overlay.hidden {
+        display: none;
+      }
+      .prompt-modal {
+        background-color: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        width: 640px;
+        max-width: 90vw;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+      }
+      .prompt-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        border-bottom: 1px solid #2a2a2a;
+      }
+      .prompt-modal-header h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #e0e0e0;
+        letter-spacing: 0.3px;
+      }
+      .prompt-modal-close {
+        background: none;
+        border: none;
+        color: #666;
+        font-size: 22px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.15s ease;
+        line-height: 1;
+      }
+      .prompt-modal-close:hover {
+        color: #e0e0e0;
+        background-color: #2a2a2a;
+      }
+      .prompt-modal-body {
+        padding: 20px;
+        overflow-y: auto;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .prompt-field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .prompt-field-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .prompt-field-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .prompt-field-hint {
+        font-size: 11px;
+        color: #555;
+        font-style: italic;
+      }
+      .prompt-field textarea {
+        width: 100%;
+        padding: 12px 14px;
+        background-color: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+        color: #e0e0e0;
+        resize: vertical;
+        line-height: 1.5;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .prompt-field textarea:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      }
+      .prompt-field textarea::placeholder {
+        color: #444;
+      }
+      .prompt-field-char-count {
+        font-size: 10px;
+        color: #555;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .prompt-presets {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .prompt-presets-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .prompt-presets-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .prompt-preset-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        background-color: #1e1e1e;
+        color: #aaa;
+        transition: all 0.15s ease;
+        white-space: nowrap;
+      }
+      .prompt-preset-btn:hover {
+        border-color: #3b82f6;
+        color: #60a5fa;
+        background-color: rgba(59, 130, 246, 0.08);
+      }
+      .prompt-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 14px 20px;
+        border-top: 1px solid #2a2a2a;
+      }
+      .prompt-modal-btn {
+        padding: 9px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        border-radius: 6px;
+        transition: all 0.15s ease;
+        letter-spacing: 0.3px;
+      }
+      .prompt-modal-btn.cancel {
+        background-color: #2a2a2a;
+        color: #aaa;
+      }
+      .prompt-modal-btn.cancel:hover {
+        background-color: #333;
+        color: #e0e0e0;
+      }
+      .prompt-modal-btn.apply {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+      }
+      .prompt-modal-btn.apply:hover {
+        background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+        transform: translateY(-1px);
+      }
+
+      /* Prompt config button in toolbar */
+      .prompt-config-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid #2a2a2a;
+        border-radius: 6px;
+        background-color: #1a1a1a;
+        color: #e0e0e0;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+        max-width: 220px;
+        overflow: hidden;
+      }
+      .prompt-config-btn:hover {
+        border-color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.08);
+      }
+      .prompt-config-btn .prompt-icon {
+        flex-shrink: 0;
+        font-size: 14px;
+        opacity: 0.7;
+      }
+      .prompt-config-btn .prompt-preview {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #888;
+        font-size: 11px;
+      }
+      .prompt-config-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        border-color: #2a2a2a;
+        background-color: #1a1a1a;
+      }
     </style>
   </head>
   <body>
@@ -865,13 +1115,12 @@
               <option value="phi3-vision">Phi-3 Vision (Microsoft)</option>
             </select>
             <span id="memoryWarning" class="hidden">&#9888; High VRAM (~4GB)</span>
-            <label for="instructionText">Instruction:</label>
-            <input
-              type="text"
-              id="instructionText"
-              name="Instruction"
-              placeholder="Enter instruction..."
-            />
+            <button id="openPromptModalBtn" class="prompt-config-btn" title="Configure prompt &amp; system message">
+              <span class="prompt-icon">&#9998;</span>
+              <span>Prompt</span>
+              <span id="promptPreviewText" class="prompt-preview">What do you see?</span>
+            </button>
+            <input type="hidden" id="instructionText" name="Instruction" value="What do you see?" />
             <label for="intervalSelect">Interval:</label>
             <select id="intervalSelect" name="Interval">
               <option value="0" selected>0ms</option>
@@ -880,7 +1129,10 @@
               <option value="500">500ms</option>
               <option value="1000">1s</option>
               <option value="2000">2s</option>
+              <option value="custom">Custom</option>
             </select>
+            <input type="number" id="customIntervalInput" min="0" max="60000" placeholder="ms" style="display: none;" />
+            <span id="customIntervalSuffix" class="custom-interval-suffix" style="display: none;">ms</span>
             <button id="startButton" class="start">Start</button>
           </div>
         </div>
@@ -901,21 +1153,24 @@
             <div class="benchmark-section">
               <span class="benchmark-section-label">Configuration</span>
               <div style="display: flex; gap: 12px; align-items: center;">
-                <label for="benchmarkInstruction" style="font-size: 12px; color: #888;">Instruction:</label>
-                <input
-                  type="text"
-                  id="benchmarkInstruction"
-                  placeholder="Enter instruction..."
-                  style="padding: 8px 12px; background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0; font-size: 13px; width: 200px;"
-                  value="What do you see?"
-                />
+                <button id="benchmarkPromptBtn" class="prompt-config-btn" title="Configure prompt &amp; system message">
+                  <span class="prompt-icon">&#9998;</span>
+                  <span>Prompt</span>
+                  <span id="benchmarkPromptPreview" class="prompt-preview">What do you see?</span>
+                </button>
                 <label for="benchmarkInterval" style="font-size: 12px; color: #888;">Interval:</label>
                 <select id="benchmarkInterval" style="padding: 8px 12px; background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0; font-size: 13px;">
+                  <option value="0">0ms</option>
+                  <option value="100">100ms</option>
+                  <option value="250">250ms</option>
                   <option value="500">500ms</option>
                   <option value="1000" selected>1s</option>
                   <option value="2000">2s</option>
                   <option value="5000">5s</option>
+                  <option value="custom">Custom</option>
                 </select>
+                <input type="number" id="benchmarkCustomIntervalInput" min="0" max="60000" placeholder="ms" style="display: none; width: 80px; padding: 8px 12px; background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px; color: #e0e0e0; font-size: 13px; -moz-appearance: textfield;" />
+                <span id="benchmarkCustomIntervalSuffix" class="custom-interval-suffix" style="display: none;">ms</span>
               </div>
             </div>
 
@@ -978,6 +1233,57 @@
             <button id="exportJSONBtn" class="export-btn">Export JSON</button>
             <button id="exportCSVBtn" class="export-btn">Export CSV</button>
             <button id="clearResultsBtn" class="export-btn clear">Clear Results</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prompt Engineering Modal -->
+      <div id="promptModal" class="prompt-modal-overlay hidden">
+        <div class="prompt-modal">
+          <div class="prompt-modal-header">
+            <h2>Prompt Engineering</h2>
+            <button id="promptModalClose" class="prompt-modal-close">&times;</button>
+          </div>
+          <div class="prompt-modal-body">
+            <div class="prompt-field">
+              <div class="prompt-field-header">
+                <span class="prompt-field-label">System Prompt</span>
+                <span class="prompt-field-hint">Sets the model's behavior and role</span>
+              </div>
+              <textarea
+                id="systemPromptInput"
+                rows="4"
+                placeholder="e.g. You are a concise visual assistant. Respond in one sentence."
+              ></textarea>
+              <span id="systemPromptCharCount" class="prompt-field-char-count">0 chars</span>
+            </div>
+            <div class="prompt-field">
+              <div class="prompt-field-header">
+                <span class="prompt-field-label">User Instruction</span>
+                <span class="prompt-field-hint">The question or task for each frame</span>
+              </div>
+              <textarea
+                id="userInstructionInput"
+                rows="3"
+                placeholder="e.g. What do you see?"
+              ></textarea>
+              <span id="userInstructionCharCount" class="prompt-field-char-count">0 chars</span>
+            </div>
+            <div class="prompt-presets">
+              <span class="prompt-presets-label">Quick Presets</span>
+              <div class="prompt-presets-row">
+                <button class="prompt-preset-btn" data-system="" data-instruction="What do you see?">General Describe</button>
+                <button class="prompt-preset-btn" data-system="You are a concise visual assistant. Respond with only the key objects and actions visible." data-instruction="Describe this scene briefly.">Concise</button>
+                <button class="prompt-preset-btn" data-system="You are a detailed visual analyst. Provide thorough descriptions including spatial relationships, colors, and context." data-instruction="Provide a detailed description of this image.">Detailed</button>
+                <button class="prompt-preset-btn" data-system="You are a safety monitoring assistant. Focus on identifying potential hazards, safety concerns, or unusual activity." data-instruction="Are there any safety concerns visible?">Safety Monitor</button>
+                <button class="prompt-preset-btn" data-system="You are an OCR assistant. Extract and report any visible text, labels, signs, or writing." data-instruction="Read all visible text in this image.">OCR / Text</button>
+                <button class="prompt-preset-btn" data-system="You are a UI analysis assistant. Identify interface elements, layouts, and interactions." data-instruction="Describe the UI elements visible on screen.">UI Analysis</button>
+              </div>
+            </div>
+          </div>
+          <div class="prompt-modal-footer">
+            <button id="promptModalCancel" class="prompt-modal-btn cancel">Cancel</button>
+            <button id="promptModalApply" class="prompt-modal-btn apply">Apply</button>
           </div>
         </div>
       </div>
@@ -1311,6 +1617,70 @@
         loadingDetail.textContent = "";
       }
 
+      const customIntervalInput = document.getElementById("customIntervalInput");
+      const customIntervalSuffix = document.getElementById("customIntervalSuffix");
+
+      // System prompt state
+      let systemPrompt = "";
+
+      // ========== SETTINGS PERSISTENCE ==========
+      const SETTINGS_KEY = "vlm-comparison-settings";
+
+      function saveSettings() {
+        const settings = {
+          model: modelSelect.value,
+          instruction: instructionText.value,
+          systemPrompt: systemPrompt,
+          interval: intervalSelect.value,
+          customInterval: customIntervalInput.value,
+        };
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch (e) { /* ignore quota errors */ }
+      }
+
+      function loadSettings() {
+        try {
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          if (!raw) return null;
+          return JSON.parse(raw);
+        } catch (e) { return null; }
+      }
+
+      // Get the effective interval value in ms
+      function getIntervalMs() {
+        if (intervalSelect.value === "custom") {
+          return parseInt(customIntervalInput.value, 10) || 0;
+        }
+        return parseInt(intervalSelect.value, 10);
+      }
+
+      // Toggle custom interval input visibility
+      function updateCustomIntervalVisibility() {
+        const isCustom = intervalSelect.value === "custom";
+        customIntervalInput.style.display = isCustom ? "" : "none";
+        customIntervalSuffix.style.display = isCustom ? "" : "none";
+      }
+
+      // Get the effective benchmark interval value in ms
+      function getBenchmarkIntervalMs() {
+        const benchmarkInterval = document.getElementById("benchmarkInterval");
+        if (benchmarkInterval.value === "custom") {
+          return parseInt(document.getElementById("benchmarkCustomIntervalInput").value, 10) || 0;
+        }
+        return parseInt(benchmarkInterval.value, 10);
+      }
+
+      // Toggle benchmark custom interval input visibility
+      function updateBenchmarkCustomIntervalVisibility() {
+        const benchmarkInterval = document.getElementById("benchmarkInterval");
+        const input = document.getElementById("benchmarkCustomIntervalInput");
+        const suffix = document.getElementById("benchmarkCustomIntervalSuffix");
+        const isCustom = benchmarkInterval.value === "custom";
+        input.style.display = isCustom ? "" : "none";
+        suffix.style.display = isCustom ? "" : "none";
+      }
+
       instructionText.value = "What do you see?"; // default instruction
 
       // Model state variables
@@ -1390,8 +1760,10 @@
       // Update recommended settings based on model
       function updateRecommendedSettings(modelKey) {
         const config = getModelConfig(modelKey);
-        if (config) {
+        if (config && intervalSelect.value !== "custom") {
           intervalSelect.value = config.suggestedInterval;
+          updateCustomIntervalVisibility();
+          saveSettings();
         }
       }
 
@@ -1573,9 +1945,13 @@
           processedImage = await resizeImage(imgElement, config.imageSize);
         }
 
+        // Build system message array if system prompt is set
+        const systemMessages = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
+
         if (processorType === "fastvlm") {
           // FastVLM: inline <image> token, image-first processor call
           messages = [
+            ...systemMessages,
             {
               role: "user",
               content: "<image>" + instruction,
@@ -1590,6 +1966,7 @@
         } else if (processorType === "qwen2vl") {
           // Qwen2-VL: structured content array, similar to SmolVLM
           messages = [
+            ...systemMessages,
             {
               role: "user",
               content: [{ type: "image" }, { type: "text", text: instruction }],
@@ -1603,31 +1980,30 @@
           });
         } else if (processorType === "florence") {
           // Florence-2: task prefix prompts, no chat template
-          // Use defaultPrompt from config or map instruction to task
           let taskPrompt = config.defaultPrompt || "<MORE_DETAILED_CAPTION>";
-          
-          // Allow user to override with specific task prefixes
           if (instruction.startsWith("<")) {
             taskPrompt = instruction;
           }
-          
           inputs = await processor(processedImage, taskPrompt);
         } else if (processorType === "paligemma") {
           // PaliGemma: space-prefixed text prompt, no chat template
-          const prompt = " " + instruction;
+          const fullInstruction = systemPrompt ? `${systemPrompt}\n${instruction}` : instruction;
+          const prompt = " " + fullInstruction;
           inputs = await processor(processedImage, prompt);
         } else if (processorType === "moondream") {
           // Moondream: uses separate tokenizer, special prompt format
-          const prompt = `<<image>>\n\nQuestion: ${instruction}\n\nAnswer:`;
+          const context = systemPrompt ? `Context: ${systemPrompt}\n\n` : "";
+          const prompt = `<<image>>\n\n${context}Question: ${instruction}\n\nAnswer:`;
           const text_inputs = tokenizer(prompt);
           const vision_inputs = await processor(processedImage);
           inputs = { ...text_inputs, ...vision_inputs };
         } else if (processorType === "janus") {
           // Janus: uses special role format with image placeholder
+          const fullInstruction = systemPrompt ? `${systemPrompt}\n${instruction}` : instruction;
           const conversation = [
             {
               role: "<|User|>",
-              content: `<<image_placeholder>>\n${instruction}`,
+              content: `<<image_placeholder>>\n${fullInstruction}`,
               images: [processedImage],
             },
           ];
@@ -1635,6 +2011,7 @@
         } else if (processorType === "gemma4") {
           // Gemma 4: structured content array with chat template
           messages = [
+            ...systemMessages,
             {
               role: "user",
               content: [
@@ -1653,6 +2030,7 @@
         } else if (processorType === "phi3v") {
           // Phi-3 Vision: uses chat template with image placeholder
           messages = [
+            ...systemMessages,
             {
               role: "user",
               content: [{ type: "image" }, { type: "text", text: instruction }],
@@ -1665,6 +2043,7 @@
         } else {
           // SmolVLM: structured content array, text-first processor call
           messages = [
+            ...systemMessages,
             {
               role: "user",
               content: [{ type: "image" }, { type: "text", text: instruction }],
@@ -1711,7 +2090,7 @@
       }
 
       async function processingLoop() {
-        const intervalMs = parseInt(intervalSelect.value, 10);
+        const intervalMs = getIntervalMs();
         while (isProcessing) {
           await sendData();
           if (!isProcessing) break;
@@ -2022,8 +2401,8 @@
       // Initialize benchmark session
       function initBenchmarkSession() {
         const selectedModels = getSelectedModels();
-        const instruction = document.getElementById("benchmarkInstruction").value || "What do you see?";
-        const intervalMs = parseInt(document.getElementById("benchmarkInterval").value, 10);
+        const instruction = instructionText.value || "What do you see?";
+        const intervalMs = getBenchmarkIntervalMs();
         const videoDuration = video.duration || 0;
         const totalFrames = Math.ceil(videoDuration / (intervalMs / 1000));
 
@@ -2035,6 +2414,7 @@
           frameInterval: intervalMs,
           totalFrames: totalFrames,
           instruction: instruction,
+          systemPrompt: systemPrompt,
           models: selectedModels,
           status: "idle",
           currentModelIndex: 0,
@@ -2085,7 +2465,7 @@
         document.getElementById("cancelBenchmarkBtn").classList.remove("hidden");
         document.getElementById("benchmarkProgressContainer").classList.remove("hidden");
         document.getElementById("modelChecklist").style.pointerEvents = "none";
-        document.getElementById("benchmarkInstruction").disabled = true;
+        document.getElementById("benchmarkPromptBtn").disabled = true;
         document.getElementById("benchmarkInterval").disabled = true;
 
         // Pause video
@@ -2103,7 +2483,7 @@
         document.getElementById("runBenchmarkBtn").classList.remove("hidden");
         document.getElementById("cancelBenchmarkBtn").classList.add("hidden");
         document.getElementById("modelChecklist").style.pointerEvents = "auto";
-        document.getElementById("benchmarkInstruction").disabled = false;
+        document.getElementById("benchmarkPromptBtn").disabled = false;
         document.getElementById("benchmarkInterval").disabled = false;
 
         if (benchmarkSession.status === "completed" || benchmarkSession.status === "cancelled") {
@@ -2513,6 +2893,74 @@
         document.getElementById("benchmarkProgressText").textContent = "Preparing benchmark...";
       }
 
+      // ========== PROMPT MODAL FUNCTIONS ==========
+
+      function openPromptModal() {
+        document.getElementById("systemPromptInput").value = systemPrompt;
+        document.getElementById("userInstructionInput").value = instructionText.value;
+        updatePromptCharCounts();
+        document.getElementById("promptModal").classList.remove("hidden");
+      }
+
+      function closePromptModal() {
+        document.getElementById("promptModal").classList.add("hidden");
+      }
+
+      function applyPromptSettings() {
+        systemPrompt = document.getElementById("systemPromptInput").value.trim();
+        instructionText.value = document.getElementById("userInstructionInput").value.trim() || "What do you see?";
+
+        // Update preview text on both live and benchmark buttons
+        const preview = instructionText.value;
+        const tooltip = (systemPrompt ? "[System] " + systemPrompt + "\n" : "") + preview;
+        document.getElementById("promptPreviewText").textContent = preview;
+        document.getElementById("promptPreviewText").title = tooltip;
+        document.getElementById("benchmarkPromptPreview").textContent = preview;
+        document.getElementById("benchmarkPromptPreview").title = tooltip;
+
+        saveSettings();
+        closePromptModal();
+      }
+
+      function applyPreset(btn) {
+        document.getElementById("systemPromptInput").value = btn.dataset.system || "";
+        document.getElementById("userInstructionInput").value = btn.dataset.instruction || "";
+        updatePromptCharCounts();
+      }
+
+      function updatePromptCharCounts() {
+        const sysVal = document.getElementById("systemPromptInput").value;
+        const usrVal = document.getElementById("userInstructionInput").value;
+        document.getElementById("systemPromptCharCount").textContent = sysVal.length + " chars";
+        document.getElementById("userInstructionCharCount").textContent = usrVal.length + " chars";
+      }
+
+      // Prompt modal event listeners
+      document.getElementById("openPromptModalBtn").addEventListener("click", openPromptModal);
+      document.getElementById("benchmarkPromptBtn").addEventListener("click", openPromptModal);
+      document.getElementById("promptModalClose").addEventListener("click", closePromptModal);
+      document.getElementById("promptModalCancel").addEventListener("click", closePromptModal);
+      document.getElementById("promptModalApply").addEventListener("click", applyPromptSettings);
+
+      document.getElementById("promptModal").addEventListener("click", (e) => {
+        if (e.target.id === "promptModal") closePromptModal();
+      });
+
+      document.getElementById("systemPromptInput").addEventListener("input", updatePromptCharCounts);
+      document.getElementById("userInstructionInput").addEventListener("input", updatePromptCharCounts);
+
+      // Preset buttons
+      document.querySelectorAll(".prompt-preset-btn").forEach(btn => {
+        btn.addEventListener("click", () => applyPreset(btn));
+      });
+
+      // Keyboard shortcut: Escape to close
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !document.getElementById("promptModal").classList.contains("hidden")) {
+          closePromptModal();
+        }
+      });
+
       startButton.addEventListener("click", () => {
         if (isProcessing) {
           handleStop();
@@ -2522,7 +2970,22 @@
       });
 
       // Model selector change event listener
-      modelSelect.addEventListener("change", handleModelChange);
+      modelSelect.addEventListener("change", () => {
+        saveSettings();
+        handleModelChange();
+      });
+
+      // Interval selector change event listener
+      intervalSelect.addEventListener("change", () => {
+        updateCustomIntervalVisibility();
+        saveSettings();
+      });
+
+      // Custom interval input change listener
+      customIntervalInput.addEventListener("input", saveSettings);
+
+      // Instruction text change listener
+      instructionText.addEventListener("input", saveSettings);
 
       // ========== VIDEO SOURCE EVENT LISTENERS ==========
       
@@ -2548,14 +3011,16 @@
       document.getElementById("benchmarkModeBtn").addEventListener("click", () => toggleMode("benchmark"));
 
       // ========== BENCHMARK EVENT LISTENERS ==========
-      
+
       document.getElementById("selectAllModelsBtn").addEventListener("click", toggleSelectAllModels);
-      
+
       document.getElementById("modelChecklist").addEventListener("change", validateBenchmarkReady);
-      
+
       document.getElementById("runBenchmarkBtn").addEventListener("click", runBenchmark);
-      
+
       document.getElementById("cancelBenchmarkBtn").addEventListener("click", cancelBenchmark);
+
+      document.getElementById("benchmarkInterval").addEventListener("change", updateBenchmarkCustomIntervalVisibility);
 
       // ========== RESULTS EVENT LISTENERS ==========
       
@@ -2599,15 +3064,40 @@
         // Initialize model checklist for benchmark mode
         updateModelChecklist();
 
+        // Restore saved settings
+        const saved = loadSettings();
+        if (saved) {
+          if (saved.model && MODEL_CONFIGS[saved.model]) {
+            modelSelect.value = saved.model;
+          }
+          if (saved.instruction) {
+            instructionText.value = saved.instruction;
+          }
+          if (saved.systemPrompt !== undefined) {
+            systemPrompt = saved.systemPrompt;
+          }
+          if (saved.interval) {
+            intervalSelect.value = saved.interval;
+          }
+          if (saved.customInterval) {
+            customIntervalInput.value = saved.customInterval;
+          }
+          updateCustomIntervalVisibility();
+
+          // Update prompt preview buttons
+          document.getElementById("promptPreviewText").textContent = instructionText.value;
+          document.getElementById("benchmarkPromptPreview").textContent = instructionText.value;
+        }
+
         // Get initial model selection from dropdown
         selectedModelKey = modelSelect.value;
-        
+
         // Update memory warning for initial selection
         updateMemoryWarning(selectedModelKey);
 
         // Set default mode to live
         appMode = "live";
-        
+
         // Don't auto-load model or screen share - wait for user action
         document.getElementById("videoSourceStatus").textContent = "Select a video source to begin";
       });
