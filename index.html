@@ -189,6 +189,29 @@
         font-size: 1em;
         opacity: 0.8;
       }
+      .loading-progress-bar {
+        width: 240px;
+        height: 6px;
+        background: #2a2a2a;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .loading-progress-fill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #3b82f6, #60a5fa);
+        border-radius: 3px;
+        transition: width 0.15s ease;
+      }
+      .loading-detail {
+        font-size: 0.8em;
+        opacity: 0.55;
+        font-variant-numeric: tabular-nums;
+        max-width: 300px;
+        text-align: center;
+        word-break: break-all;
+      }
       #startButton {
         padding: 10px 20px;
         font-size: 13px;
@@ -801,6 +824,10 @@
             <div class="loading-content">
               <span id="loadingModelName" class="loading-model-name"></span>
               <span id="loadingStatus" class="loading-status">Loading...</span>
+              <div class="loading-progress-bar">
+                <div id="loadingProgressFill" class="loading-progress-fill"></div>
+              </div>
+              <span id="loadingDetail" class="loading-detail"></span>
             </div>
           </div>
         </div>
@@ -833,6 +860,8 @@
               <option value="smolvlm-2b">SmolVLM 2B (Capable)</option>
               <option value="qwen2vl-2b">Qwen2-VL 2B (Alibaba)</option>
               <option value="paligemma2-3b">PaliGemma2 3B (Google)</option>
+              <option value="gemma4-e2b">Gemma 4 E2B (Google)</option>
+              <option value="gemma4-e4b">Gemma 4 E4B (Google)</option>
               <option value="phi3-vision">Phi-3 Vision (Microsoft)</option>
             </select>
             <span id="memoryWarning" class="hidden">&#9888; High VRAM (~4GB)</span>
@@ -977,6 +1006,7 @@
         Qwen2VLForConditionalGeneration,
         Florence2ForConditionalGeneration,
         PaliGemmaForConditionalGeneration,
+        Gemma4ForConditionalGeneration,
         Moondream1ForConditionalGeneration,
         MultiModalityCausalLM,
         RawImage,
@@ -1116,6 +1146,30 @@
           chatTemplateSupported: false,
           imageSize: 224,
         },
+        "gemma4-e2b": {
+          modelId: "onnx-community/gemma-4-E2B-it-ONNX",
+          displayName: "Gemma 4 E2B (Google)",
+          modelClass: "Gemma4ForConditionalGeneration",
+          processorType: "gemma4",
+          vramEstimate: "~4GB",
+          maxTokens: 150,
+          suggestedInterval: "500",
+          showWarning: true,
+          dtype: "q4f16",
+          chatTemplateSupported: true,
+        },
+        "gemma4-e4b": {
+          modelId: "onnx-community/gemma-4-E4B-it-ONNX",
+          displayName: "Gemma 4 E4B (Google)",
+          modelClass: "Gemma4ForConditionalGeneration",
+          processorType: "gemma4",
+          vramEstimate: "~6GB",
+          maxTokens: 150,
+          suggestedInterval: "1000",
+          showWarning: true,
+          dtype: "q4f16",
+          chatTemplateSupported: true,
+        },
         "moondream2": {
           modelId: "Xenova/moondream2",
           displayName: "Moondream2 (Xenova)",
@@ -1214,6 +1268,48 @@
       const memoryWarning = document.getElementById("memoryWarning");
       const loadingModelName = document.getElementById("loadingModelName");
       const loadingStatus = document.getElementById("loadingStatus");
+      const loadingProgressFill = document.getElementById("loadingProgressFill");
+      const loadingDetail = document.getElementById("loadingDetail");
+
+      function formatBytes(bytes) {
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const units = ["B", "KB", "MB", "GB"];
+        const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), units.length - 1);
+        return (bytes / Math.pow(k, i)).toFixed(i > 1 ? 1 : 0) + " " + units[i];
+      }
+
+      function makeProgressCallback(phase) {
+        let filesDone = 0;
+        let totalFiles = 0;
+        return (progress) => {
+          if (progress.status === "initiate") {
+            totalFiles++;
+            const fileName = progress.file ? progress.file.split("/").pop() : "";
+            loadingDetail.textContent = fileName ? `Preparing ${fileName}…` : "";
+          } else if (progress.status === "download") {
+            const fileName = progress.file ? progress.file.split("/").pop() : "";
+            loadingDetail.textContent = fileName ? `Downloading ${fileName}…` : "Downloading…";
+          } else if (progress.status === "progress" && progress.total) {
+            const pct = Math.round((progress.loaded / progress.total) * 100);
+            const fileName = progress.file ? progress.file.split("/").pop() : "";
+            loadingProgressFill.style.width = pct + "%";
+            loadingDetail.textContent = `${fileName}  ${formatBytes(progress.loaded)} / ${formatBytes(progress.total)}  (${pct}%)`;
+            loadingStatus.textContent = `${phase}…`;
+          } else if (progress.status === "done") {
+            filesDone++;
+            loadingProgressFill.style.width = "100%";
+            if (totalFiles > 0) {
+              loadingDetail.textContent = `${filesDone} / ${totalFiles} files loaded`;
+            }
+          }
+        };
+      }
+
+      function resetLoadingProgress() {
+        loadingProgressFill.style.width = "0%";
+        loadingDetail.textContent = "";
+      }
 
       instructionText.value = "What do you see?"; // default instruction
 
@@ -1321,70 +1417,71 @@
 
         loadingOverlay.style.display = "flex";
         loadingModelName.textContent = config.displayName;
-        loadingStatus.textContent = "Loading processor...";
+        loadingStatus.textContent = "Loading processor…";
+        resetLoadingProgress();
         responseText.value = `Loading ${config.displayName}...`;
 
         try {
           // Load processor
-          processor = await AutoProcessor.from_pretrained(config.modelId);
-          loadingStatus.textContent = "Processor loaded. Loading model...";
+          const processorProgress = makeProgressCallback("Loading processor");
+          processor = await AutoProcessor.from_pretrained(config.modelId, {
+            progress_callback: processorProgress,
+          });
+          loadingStatus.textContent = "Processor loaded.";
+          resetLoadingProgress();
           responseText.value = `${config.displayName}: Processor loaded. Loading model...`;
 
           // Load tokenizer if required (e.g., Moondream)
           if (config.requiresTokenizer) {
-            loadingStatus.textContent = "Loading tokenizer...";
-            tokenizer = await AutoTokenizer.from_pretrained(config.modelId);
-            loadingStatus.textContent = "Tokenizer loaded. Loading model...";
+            loadingStatus.textContent = "Loading tokenizer…";
+            const tokenizerProgress = makeProgressCallback("Loading tokenizer");
+            tokenizer = await AutoTokenizer.from_pretrained(config.modelId, {
+              progress_callback: tokenizerProgress,
+            });
+            loadingStatus.textContent = "Tokenizer loaded.";
+            resetLoadingProgress();
           } else {
             tokenizer = null;
           }
 
           // Load model based on model class
+          loadingStatus.textContent = "Downloading model weights…";
+          const modelProgress = makeProgressCallback("Downloading model");
+          const modelOpts = {
+            dtype: config.dtype,
+            device: "webgpu",
+            progress_callback: modelProgress,
+          };
+
           if (config.modelClass === "AutoModelForImageTextToText") {
-            model = await AutoModelForImageTextToText.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await AutoModelForImageTextToText.from_pretrained(config.modelId, modelOpts);
           } else if (config.modelClass === "Qwen2VLForConditionalGeneration") {
-            model = await Qwen2VLForConditionalGeneration.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await Qwen2VLForConditionalGeneration.from_pretrained(config.modelId, modelOpts);
           } else if (config.modelClass === "Florence2ForConditionalGeneration") {
-            model = await Florence2ForConditionalGeneration.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await Florence2ForConditionalGeneration.from_pretrained(config.modelId, modelOpts);
           } else if (config.modelClass === "PaliGemmaForConditionalGeneration") {
-            model = await PaliGemmaForConditionalGeneration.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await PaliGemmaForConditionalGeneration.from_pretrained(config.modelId, modelOpts);
+          } else if (config.modelClass === "Gemma4ForConditionalGeneration") {
+            model = await Gemma4ForConditionalGeneration.from_pretrained(config.modelId, modelOpts);
           } else if (config.modelClass === "Moondream1ForConditionalGeneration") {
-            model = await Moondream1ForConditionalGeneration.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await Moondream1ForConditionalGeneration.from_pretrained(config.modelId, modelOpts);
           } else if (config.modelClass === "MultiModalityCausalLM") {
-            model = await MultiModalityCausalLM.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await MultiModalityCausalLM.from_pretrained(config.modelId, modelOpts);
           } else {
             // Default to AutoModelForVision2Seq
-            model = await AutoModelForVision2Seq.from_pretrained(config.modelId, {
-              dtype: config.dtype,
-              device: "webgpu",
-            });
+            model = await AutoModelForVision2Seq.from_pretrained(config.modelId, modelOpts);
           }
 
           currentModelKey = modelKey;
           loadingStatus.textContent = "Model loaded!";
+          loadingProgressFill.style.width = "100%";
+          loadingDetail.textContent = "";
           responseText.value = `${config.displayName} loaded. Initializing screen share...`;
           loadingOverlay.style.display = "none";
         } catch (error) {
           console.error("Error loading model:", error);
           loadingOverlay.style.display = "none";
+          resetLoadingProgress();
           currentModelKey = null;
           
           // Check for memory-related errors
@@ -1535,6 +1632,24 @@
             },
           ];
           inputs = await processor(conversation);
+        } else if (processorType === "gemma4") {
+          // Gemma 4: structured content array with chat template
+          messages = [
+            {
+              role: "user",
+              content: [
+                { type: "image" },
+                { type: "text", text: instruction },
+              ],
+            },
+          ];
+          text = processor.apply_chat_template(messages, {
+            enable_thinking: false,
+            add_generation_prompt: true,
+          });
+          inputs = await processor(text, processedImage, null, {
+            add_special_tokens: false,
+          });
         } else if (processorType === "phi3v") {
           // Phi-3 Vision: uses chat template with image placeholder
           messages = [
